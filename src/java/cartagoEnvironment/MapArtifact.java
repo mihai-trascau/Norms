@@ -14,6 +14,8 @@ public class MapArtifact extends Artifact {
 	private Map map;
 	private Vector<Position> agentPosition;
 	private int registeredAgents;
+	private Vector<Integer> actionInThisRound;	//AT
+	private int tick;							//AT
 	
 	private int queuedActions;	
 	
@@ -25,6 +27,9 @@ public class MapArtifact extends Artifact {
 		
 		map.readMap();
 		map.printMap();
+		
+		actionInThisRound = new Vector<Integer>();	//AT
+		tick = 0;									//AT
 	}
 	
 	
@@ -41,10 +46,11 @@ public class MapArtifact extends Artifact {
 		defineObsProperty("pos",registeredAgents,initPos.getX(),initPos.getY());
 		agentID.set(registeredAgents);
 		registeredAgents++;
+		
+		actionInThisRound.add(0);
 	}
 	
-	
-	@OPERATION//(guard="actionSync")
+	@OPERATION (guard="synchronize")
 	void move(int agentID, int dir) {
 		Position nextPos = agentPosition.get(agentID).getNextPosition(DIRECTION.values()[dir]);
 		if(!map.isValid(nextPos))
@@ -61,7 +67,9 @@ public class MapArtifact extends Artifact {
 			else
 			{
 				prop.updateValues(agentID,nextPos.getX(),nextPos.getY());
+				registerAction(agentID);
 				agentPosition.set(agentID, nextPos);
+				System.out.println(agentID + ": " + tick + " " + nextPos.toString());
 			}
 		}
 	}
@@ -82,5 +90,24 @@ public class MapArtifact extends Artifact {
 			System.out.println("[MAP_ARTIFACT]:	"+agentID+" -> executing");
 			return true;
 		}
+	}
+	
+	void registerAction(int agentID)
+	{
+		actionInThisRound.set(agentID, 1);
+	}
+	
+	@GUARD
+	boolean synchronize(int agentID, int dir)
+	{
+		if (!actionInThisRound.contains(0))
+		{
+			for (int i=0; i<actionInThisRound.size(); i++)
+				actionInThisRound.set(i, 0);
+			tick++;
+		}
+		if (actionInThisRound.get(agentID) == 0)
+			return true;
+		return false;
 	}
 }
