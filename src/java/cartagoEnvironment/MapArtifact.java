@@ -92,4 +92,8 @@ public class MapArtifact extends Artifact {
 			return true;
 		return false;
 	}
+	
+	public void testPentruMihai() {
+		int mergeMihaiquestionMark = 0;
+	}
 }
