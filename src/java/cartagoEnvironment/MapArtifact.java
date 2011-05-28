@@ -74,24 +74,6 @@ public class MapArtifact extends Artifact {
 		}
 	}
 	
-	@GUARD
-	boolean actionSync(int agentID, int dir)
-	{
-		System.out.println("[MAP_ARTIFACT]:	"+agentID+" -> q="+queuedActions);
-		if(queuedActions < registeredAgents)
-		{
-			queuedActions++;
-			System.out.println("[MAP_ARTIFACT]:	"+agentID+" -> q="+queuedActions);
-			return false;
-		}
-		else
-		{
-			queuedActions = 0;
-			System.out.println("[MAP_ARTIFACT]:	"+agentID+" -> executing");
-			return true;
-		}
-	}
-	
 	void registerAction(int agentID)
 	{
 		actionInThisRound.set(agentID, 1);
