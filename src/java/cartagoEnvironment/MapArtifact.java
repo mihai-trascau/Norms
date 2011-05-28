@@ -95,5 +95,6 @@ public class MapArtifact extends Artifact {
 	
 	public void testPentruMihai() {
 		int mergeMihaiquestionMark = 0;
+		int daAndreiDarLaTineMerge = 0;
 	}
 }
