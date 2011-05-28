@@ -92,4 +92,9 @@ public class Position
 			return false;
 		return true;
 	}
+	
+	public String toString()
+	{
+		return "("+x+","+y+")";
+	}
 }

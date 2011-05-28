@@ -28,10 +28,10 @@
 
 +!nextMove(MAP_ID,ID):	true
 <-	?pos(ID,X,Y);
-	println("position	",X,",",Y);
+	//println("position	",X,",",Y);
 	move(ID,math.floor(math.random(4))) [artifact_id(MAP_ID)];
 	?pos(ID,Xnew,Ynew);
-	println("	==>	",Xnew,",",Ynew);
+	//println("	==>	",Xnew,",",Ynew);
 	!nextMove(MAP_ID,ID).
 
 -!nextMove(MAP_ID,ID): true
