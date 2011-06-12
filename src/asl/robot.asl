@@ -1,3 +1,8 @@
+goTo(0,0,7).
+goTo(1,4,7).
+
+norm([time(5),time(6)],[time(10)],work).
+
 !start.
 
 /*	Initialization
@@ -5,14 +10,25 @@
  *		- focus the map artifact
  *		- register on the map
  */
+ 
++norm(Act, Exp, Norm): true
+<-	?acceptNorm(Act, Exp, Norm);
+	!processNorm(Act, Exp, Norm).
+	
++?acceptNorm(Act, Exp, Norm): true
+<-	true.
+
++!processNorm(Act, Exp, Norm): true
+<-	println("norm: ",Norm).
+ 
 +!start: true
 <-	?getMap(MAP_ID);
 	register(ID) [artifact_id(MAP_ID)];
 	+myID(ID);
 	println("Registered with ID:",ID);
 	focus(MAP_ID);
-	!nextMove(MAP_ID,ID).
-	
+	//!nextMove(MAP_ID,ID).
+	!action(ID).
 
 /* Find the MAP_ID */
 +?getMap(MAP_ID): true
@@ -36,3 +52,16 @@
 
 -!nextMove(MAP_ID,ID): true
 <-	!!nextMove(MAP_ID,ID).
+
++!action(ID): true
+<-	?goTo(ID,X,Y);
+	plan(ID,X,Y,Path);
+	.member(P,Path);
+	println("pos: ",P).
+	//!checkViability(ID).
+	
++!checkViability(ID): true 
+<-	?position(ID,X1,Y1,T1);
+	?position(ID2,X2,Y2,T2);
+	T1 == T2;
+	println("T1==T2").

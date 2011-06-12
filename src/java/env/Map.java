@@ -27,9 +27,9 @@ public class Map
 	
 	public boolean isValid(Position p)
 	{
-		if(p.getX() < 0 || p.getX() > height || p.getY() < 0 || p.getY() > width ||  map[p.getX()][p.getY()] == 1)
-			return false;
-		return true;
+		if(p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width &&  map[p.getX()][p.getY()] == 0)
+			return true;
+		return false;
 	}
 	
 	public boolean isValidMove(Position p, Position.DIRECTION dir)

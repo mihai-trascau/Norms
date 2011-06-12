@@ -1,7 +1,7 @@
 package cartagoEnvironment;
 
 import java.io.File;
-import java.util.Vector;
+import java.util.*;
 
 import cartago.*;
 
@@ -30,8 +30,9 @@ public class MapArtifact extends Artifact {
 		
 		actionInThisRound = new Vector<Integer>();	//AT
 		tick = 0;									//AT
-	}
-	
+		
+		System.out.println(findPath(new Position(0,0), new Position(4,7)));
+	}	
 	
 	/**
 	 * Registers the agent on the map, giving it an ID number and creating a new observable
@@ -93,8 +94,73 @@ public class MapArtifact extends Artifact {
 		return false;
 	}
 	
-	public void testPentruMihai() {
-		int mergeMihaiquestionMark = 0;
-		int daAndreiDarLaTineMerge = 0;
+	public Vector<Position> getNeighbours(Position p)
+	{
+		Vector<Position> neighbours = new Vector<Position>();
+		int x = p.getX();
+		int y = p.getY();
+		Position neighbour = new Position(x, y-1);
+		if (map.isValid(neighbour))
+			neighbours.add(neighbour);
+		neighbour = new Position(x, y+1);
+		if (map.isValid(neighbour))
+			neighbours.add(neighbour);
+		neighbour = new Position(x-1, y);
+		if (map.isValid(neighbour))
+			neighbours.add(neighbour);
+		neighbour = new Position(x+1, y);
+		if (map.isValid(neighbour))
+			neighbours.add(neighbour);
+		return neighbours;
+	}
+	
+	public Vector<Position> findPath(Position source, Position destination)
+	{
+		LinkedList<Position> queue = new LinkedList<Position>();
+		HashSet<Position> visited = new HashSet<Position>();
+		Hashtable<Position, Position> parents = new Hashtable<Position, Position>();
+		queue.add(source);
+		while (!queue.isEmpty())
+		{
+			Position first = queue.removeFirst();
+			for (Position next: getNeighbours(first))
+				if (!visited.contains(next))
+				{
+					visited.add(next);
+					queue.add(next);
+					parents.put(next, first);
+					//destination reached
+					if (next.equals(destination))
+					{
+						Vector<Position> path = new Vector<Position>();
+						Position p = next;
+						do
+						{
+							path.add(0, p);
+							p = parents.get(p);
+						} while (!p.equals(source));
+						path.add(0, p);
+						return path;
+					}
+				}
+		}
+		return null;
+	}
+	
+	@OPERATION
+	public void plan(int agentID, int x, int y, OpFeedbackParam<Position[]> path)
+	{
+		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
+		Position[] pathArray = new Position[pathVector.size()];
+		for (int i=0; i<pathVector.size(); i++)
+			pathArray[i] = pathVector.get(i);
+		path.set(pathArray);
+		
+		/*int i=0;
+		for (Position p: findPath(agentPosition.get(agentID), new Position(x,y)))
+		{
+			defineObsProperty("position", agentID, p.getX(), p.getY(), i);
+			i++;
+		}*/
 	}
 }
