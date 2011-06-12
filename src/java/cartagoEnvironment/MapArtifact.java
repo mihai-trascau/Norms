@@ -151,9 +151,9 @@ public class MapArtifact extends Artifact {
 	public void plan(int agentID, int x, int y, OpFeedbackParam<Position[]> path)
 	{
 		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
-		Position[] pathArray = new Position[pathVector.size()];
+		PositionTime[] pathArray = new PositionTime[pathVector.size()];
 		for (int i=0; i<pathVector.size(); i++)
-			pathArray[i] = pathVector.get(i);
+			pathArray[i] = new PopathVector.get(i);
 		path.set(pathArray);
 		
 		/*int i=0;

@@ -57,11 +57,14 @@ norm([time(5),time(6)],[time(10)],work).
 <-	?goTo(ID,X,Y);
 	plan(ID,X,Y,Path);
 	.member(P,Path);
-	println("pos: ",P).
-	//!checkViability(ID).
+	+path(ID,Path);
+	println("pos: ",P);
+	!checkViability(ID).
 	
 +!checkViability(ID): true 
-<-	?position(ID,X1,Y1,T1);
-	?position(ID2,X2,Y2,T2);
-	T1 == T2;
+<-	?path(ID,P1);
+	?path(ID2,P2);
+	.member(X,P1);
+	.member(Y,P2);
+	X==Y;
 	println("T1==T2").
