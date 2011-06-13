@@ -4,6 +4,7 @@ public class Position
 {
 	private int x;
 	private int y;
+	private int time;
 	
 	public enum DIRECTION
 	{
@@ -13,13 +14,20 @@ public class Position
 		WEST
 	}
 	
+	public Position() {
+		this(0,0);
+	}
+	
 	public Position(int x, int y) {
 		this.x = x;
 		this.y = y;
+		this.time = 0;
 	}
 	
-	public Position() {
-		this(0,0);
+	public Position(int x, int y, int time) {
+		this.x = x;
+		this.y = y;
+		this.time = time;
 	}
 	
 	public int getX() {
@@ -38,6 +46,14 @@ public class Position
 		this.y = y;
 	}
 	
+	public int getTime() {
+		return time;
+	}
+
+	public void setTime(int time) {
+		this.time = time;
+	}
+
 	public void setPosition(Position newPosition)
 	{
 		this.x = newPosition.getX();
@@ -86,15 +102,29 @@ public class Position
 		return newPos;
 	}
 	
-	public boolean equals(Position p)
+	@Override
+	public boolean equals(Object obj)
 	{
-		if(this.x != p.getX() || this.y != p.getY())
+		Position p = (Position)obj;
+		if (this.x != p.getX() || this.y != p.getY() || this.time != p.getTime())
 			return false;
 		return true;
 	}
 	
+	public boolean like(Position p)
+	{
+		if (this.x != p.getX() || this.y != p.getY())
+			return false;
+		return true;
+	}
+	
+	public Position resetTime(int k)
+	{
+		return new Position(this.x, this.y, this.time+k);
+	}
+	
 	public String toString()
 	{
-		return "("+x+","+y+")";
+		return "("+x+","+y+"):"+time;
 	}
 }

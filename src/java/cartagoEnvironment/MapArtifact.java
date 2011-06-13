@@ -31,7 +31,14 @@ public class MapArtifact extends Artifact {
 		actionInThisRound = new Vector<Integer>();	//AT
 		tick = 0;									//AT
 		
-		System.out.println(findPath(new Position(0,0), new Position(4,7)));
+		/*Position[] path1 = {new Position(0,2,0), new Position(1,2,1), new Position(1,3,2), new Position(1,4,3), 
+				new Position(2,4,4), new Position(3,4,5)};
+		Position[] path2 = {new Position(1,1,0), new Position(1,2,1), new Position(1,3,2), new Position(1,4,3),
+				new Position(1,5,4)};
+		Position[] path3 = {new Position(4,4,8), new Position(3,4,9), new Position(2,4,10)};
+		this.defineObsProperty("path1", path1, 0);
+		this.defineObsProperty("path2", path2, 0);
+		this.defineObsProperty("path3", path3, 0);*/
 	}	
 	
 	/**
@@ -94,7 +101,7 @@ public class MapArtifact extends Artifact {
 		return false;
 	}
 	
-	public Vector<Position> getNeighbours(Position p)
+	Vector<Position> getNeighbours(Position p)
 	{
 		Vector<Position> neighbours = new Vector<Position>();
 		int x = p.getX();
@@ -114,7 +121,7 @@ public class MapArtifact extends Artifact {
 		return neighbours;
 	}
 	
-	public Vector<Position> findPath(Position source, Position destination)
+	Vector<Position> findPath(Position source, Position destination)
 	{
 		LinkedList<Position> queue = new LinkedList<Position>();
 		HashSet<Position> visited = new HashSet<Position>();
@@ -140,6 +147,8 @@ public class MapArtifact extends Artifact {
 							p = parents.get(p);
 						} while (!p.equals(source));
 						path.add(0, p);
+						for (int i=0; i<path.size(); i++)
+							path.get(i).setTime(i);
 						return path;
 					}
 				}
@@ -148,19 +157,101 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	public void plan(int agentID, int x, int y, OpFeedbackParam<Position[]> path)
+	void plan(int agentID, int x, int y)
 	{
 		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
-		PositionTime[] pathArray = new PositionTime[pathVector.size()];
+		Position[] pathArray = new Position[pathVector.size()];
 		for (int i=0; i<pathVector.size(); i++)
-			pathArray[i] = new PopathVector.get(i);
-		path.set(pathArray);
+			pathArray[i] = pathVector.get(i);
+		defineObsProperty("path", agentID, pathArray, 0);
 		
-		/*int i=0;
-		for (Position p: findPath(agentPosition.get(agentID), new Position(x,y)))
+		/*Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
+		String[] pathArray = new String[pathVector.size()];
+		for (int i=0; i<pathVector.size(); i++)
+			pathArray[i] = pathVector.get(i).toString() + ":" + i;
+		defineObsProperty("path", agentID, pathArray, 0);*/
+	}
+	
+	@OPERATION
+	void replan(int agentID, Object[] myPathObj, Object[] paths)
+	{
+		Vector<Position> myPath = new Vector<Position>();
+		for (int i=0; i<myPathObj.length; i++)
+			myPath.add((Position)myPathObj[i]);
+		
+		//for each path in list of paths
+		for (int pathNo=0; pathNo<paths.length; pathNo++)
 		{
-			defineObsProperty("position", agentID, p.getX(), p.getY(), i);
-			i++;
-		}*/
+			Object[] pathObj = (Object[])paths[pathNo];
+			Vector<Position> path = new Vector<Position>();
+			for (int i=0; i<pathObj.length; i++)
+				path.add((Position)pathObj[i]);
+			
+			for (int i=0; i<myPath.size(); i++)
+			{
+				if (path.contains(myPath.get(i)))
+				{
+					Position index = findOverlaping(myPath, path, i, path.indexOf(myPath.get(i)));
+					for (i=index.getX(); i<=index.getY(); i++)
+						myPath.add(i, myPath.get(i-1).resetTime(1));
+					for (i=index.getY()+1; i<myPath.size(); i++)
+						myPath.set(i, myPath.get(i).resetTime(index.getY()-index.getX()+1));
+					System.out.println("partial path: "+myPath);
+					continue;
+				}
+			}
+		}
+		System.out.println("   final path: "+myPath);
+		Position[] pathArray = new Position[myPath.size()];
+		for (int i=0; i<myPath.size(); i++)
+			pathArray[i] = myPath.get(i);
+		//defineObsProperty("path", agentID, pathArray, 1);
+		ObsProperty prop = getObsPropertyByTemplate("path", agentID);
+		prop.updateValues(agentID, pathArray, 1);
+	}
+	
+	Position findOverlaping(Vector<Position> myPath, Vector<Position> path, int index1, int index2)
+	{
+		int down = index1;
+		int up = index1;
+		TreeSet<Integer> index = new TreeSet<Integer>();
+		index.add(index2);
+		while (true)
+		{
+			if (down-1 < 0)
+				break;
+			Position pos = myPath.get(down-1);
+			if (index.first()-1>=0 && pos.like(path.get(index.first()-1)))
+			{
+				index.add(index.first()-1);
+				down--;
+			}
+			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1)))
+			{
+				index.add(index.last()+1);
+				down--;
+			}
+			else
+				break;
+		}
+		while (true)
+		{
+			if (up+1 >= myPath.size())
+				break;
+			Position pos = myPath.get(up+1);
+			if (index.first()-1>=0 && pos.like(path.get(index.first()-1)))
+			{
+				index.add(index.first()-1);
+				up++;
+			}
+			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1)))
+			{
+				index.add(index.last()+1);
+				up++;
+			}
+			else
+				break;
+		}
+		return new Position(down, up+1);
 	}
 }
