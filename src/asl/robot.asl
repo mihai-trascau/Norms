@@ -63,14 +63,12 @@ norm([time(5),time(6)],[time(10)],work).
 <-	.println("checkValidity start");
 	.findall(AgentID, (path(AgentID,Path,_) & (AgentID \== ID)), L);
 	?path(ID,MyPath,0);
-	if (L==[])
-	{
+	if (L==[]) {
 		.println("NU EXISTA PATH-URI");
 		-path(ID,MyPath,0);
 		+path(ID,MyPath,1);
 	}
-	else
-	{
+	else {
 		.println("EXISTA PATH-URI");
 		!solveConflicts(ID);
 	}
@@ -83,24 +81,20 @@ norm([time(5),time(6)],[time(10)],work).
 	?path3(P3,0);
 	replan(MyID,P1,[P2,P3]);*/
 	?path(MyID,MyPath,0);
-	if (L0 == [])
-	{
+	if (L0 == []) {
 		.println("TOATE PATH-URILE SUNT COMMITED");
 		.findall(Path, (path(ID,Path,1) & (ID \== MyID)), L1);
 		replan(MyId, MyPath, L1);
 	}
-	else
-	{
+	else {
 		.println("EXISTA PATH-URI UNCOMMITED");
 		.min(L0,Min);
-		if (MyID <= Min)
-		{
+		if (MyID <= Min) {
 			//.println("==================================");
 			.findall(Path, (path(ID,Path,1) & (ID \== MyID)), L1);
 			replan(MyID, MyPath, L1);
 		}
-		else
-		{
+		else {
 			.wait(1000);
 			!solveConflicts(MyID);
 		}
@@ -110,14 +104,12 @@ norm([time(5),time(6)],[time(10)],work).
 +?getFirstCommon(Path1,Path2,C): true
 <-	.println("getFirstCommon start");
 	.min([.length(Path1),.length(Path2)],Len);
-	for (.range(I,0,Len-1))
-	{
+	for (.range(I,0,Len-1)) {
 		.nth(I,Path1,X);
 		.nth(I,Path2,Y);
 		.term2string(X,XT);
 		.term2string(Y,YT);
-		if (X==Y)
-		{
+		if (X==Y) {
 			C = X;
 		}
 	}

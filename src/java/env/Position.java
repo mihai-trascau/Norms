@@ -106,9 +106,9 @@ public class Position
 	public boolean equals(Object obj)
 	{
 		Position p = (Position)obj;
-		if (this.x != p.getX() || this.y != p.getY() || this.time != p.getTime())
-			return false;
-		return true;
+		if (this.x == p.getX() && this.y == p.getY() && this.time == p.getTime())
+			return true;
+		return false;
 	}
 	
 	public boolean like(Position p)

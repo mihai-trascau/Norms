@@ -17,7 +17,7 @@ public class MapArtifact extends Artifact {
 	private Vector<Integer> actionInThisRound;	//AT
 	private int tick;							//AT
 	
-	private int queuedActions;	
+	private int queuedActions;
 	
 	void init() {
 		map = new Map(new File("res/map.in"));
@@ -82,16 +82,13 @@ public class MapArtifact extends Artifact {
 		}
 	}
 	
-	void registerAction(int agentID)
-	{
+	void registerAction(int agentID) {
 		actionInThisRound.set(agentID, 1);
 	}
 	
 	@GUARD
-	boolean synchronize(int agentID, int dir)
-	{
-		if (!actionInThisRound.contains(0))
-		{
+	boolean synchronize(int agentID, int dir) {
+		if (!actionInThisRound.contains(0)) {
 			for (int i=0; i<actionInThisRound.size(); i++)
 				actionInThisRound.set(i, 0);
 			tick++;
@@ -101,8 +98,7 @@ public class MapArtifact extends Artifact {
 		return false;
 	}
 	
-	Vector<Position> getNeighbours(Position p)
-	{
+	Vector<Position> getNeighbours(Position p) {
 		Vector<Position> neighbours = new Vector<Position>();
 		int x = p.getX();
 		int y = p.getY();
@@ -121,28 +117,23 @@ public class MapArtifact extends Artifact {
 		return neighbours;
 	}
 	
-	Vector<Position> findPath(Position source, Position destination)
-	{
+	Vector<Position> findPath(Position source, Position destination) {
 		LinkedList<Position> queue = new LinkedList<Position>();
 		HashSet<Position> visited = new HashSet<Position>();
 		Hashtable<Position, Position> parents = new Hashtable<Position, Position>();
 		queue.add(source);
-		while (!queue.isEmpty())
-		{
+		while (!queue.isEmpty()) {
 			Position first = queue.removeFirst();
 			for (Position next: getNeighbours(first))
-				if (!visited.contains(next))
-				{
+				if (!visited.contains(next)) {
 					visited.add(next);
 					queue.add(next);
 					parents.put(next, first);
 					//destination reached
-					if (next.equals(destination))
-					{
+					if (next.equals(destination)) {
 						Vector<Position> path = new Vector<Position>();
 						Position p = next;
-						do
-						{
+						do {
 							path.add(0, p);
 							p = parents.get(p);
 						} while (!p.equals(source));
@@ -157,8 +148,7 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void plan(int agentID, int x, int y)
-	{
+	void plan(int agentID, int x, int y) {
 		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
 		Position[] pathArray = new Position[pathVector.size()];
 		for (int i=0; i<pathVector.size(); i++)
@@ -173,24 +163,20 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void replan(int agentID, Object[] myPathObj, Object[] paths)
-	{
+	void replan(int agentID, Object[] myPathObj, Object[] paths) {
 		Vector<Position> myPath = new Vector<Position>();
 		for (int i=0; i<myPathObj.length; i++)
 			myPath.add((Position)myPathObj[i]);
 		
 		//for each path in list of paths
-		for (int pathNo=0; pathNo<paths.length; pathNo++)
-		{
+		for (int pathNo=0; pathNo<paths.length; pathNo++) {
 			Object[] pathObj = (Object[])paths[pathNo];
 			Vector<Position> path = new Vector<Position>();
 			for (int i=0; i<pathObj.length; i++)
 				path.add((Position)pathObj[i]);
 			
-			for (int i=0; i<myPath.size(); i++)
-			{
-				if (path.contains(myPath.get(i)))
-				{
+			for (int i=0; i<myPath.size(); i++) {
+				if (path.contains(myPath.get(i))) {
 					Position index = findOverlaping(myPath, path, i, path.indexOf(myPath.get(i)));
 					for (i=index.getX(); i<=index.getY(); i++)
 						myPath.add(i, myPath.get(i-1).resetTime(1));
@@ -210,42 +196,35 @@ public class MapArtifact extends Artifact {
 		prop.updateValues(agentID, pathArray, 1);
 	}
 	
-	Position findOverlaping(Vector<Position> myPath, Vector<Position> path, int index1, int index2)
-	{
+	Position findOverlaping(Vector<Position> myPath, Vector<Position> path, int index1, int index2) {
 		int down = index1;
 		int up = index1;
 		TreeSet<Integer> index = new TreeSet<Integer>();
 		index.add(index2);
-		while (true)
-		{
+		while (true) {
 			if (down-1 < 0)
 				break;
 			Position pos = myPath.get(down-1);
-			if (index.first()-1>=0 && pos.like(path.get(index.first()-1)))
-			{
+			if (index.first()-1>=0 && pos.like(path.get(index.first()-1))) {
 				index.add(index.first()-1);
 				down--;
 			}
-			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1)))
-			{
+			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1))) {
 				index.add(index.last()+1);
 				down--;
 			}
 			else
 				break;
 		}
-		while (true)
-		{
+		while (true) {
 			if (up+1 >= myPath.size())
 				break;
 			Position pos = myPath.get(up+1);
-			if (index.first()-1>=0 && pos.like(path.get(index.first()-1)))
-			{
+			if (index.first()-1>=0 && pos.like(path.get(index.first()-1))) {
 				index.add(index.first()-1);
 				up++;
 			}
-			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1)))
-			{
+			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1))) {
 				index.add(index.last()+1);
 				up++;
 			}
