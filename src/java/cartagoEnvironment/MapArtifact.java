@@ -72,9 +72,13 @@ public class MapArtifact extends Artifact {
 						".findall(pos(X,Y,T),pos(AgID,X,Y,T),L1);" +
 						".findall(pos(X,Y,T),(pos(ID,X,Y,T) & not ID==AgID),L2);" +
 						".intersection(L1,L2,L);" +
-						".length(L,N);" +
-						"N > 0;" +
-						".",
+						".member(pos(X,Y,T),L);" +
+						".findall(ID,(pos(ID,X,Y,T) & not ID==AgID),Agents);" +
+						".member(ConflictID,Agents);" +
+						".findall(T1,pos(ConflictID,X1,Y1,T1),L3);" +
+						".length(L1,N1);" +
+						".length(L3,N3);" +
+						" N3 < N1.",
 				"",
 				"+!norm_content("+normID+",AgID) : true <-" +
 						"replanPath(AgID).",
