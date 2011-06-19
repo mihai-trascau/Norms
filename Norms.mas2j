@@ -9,7 +9,7 @@ MAS helloworld {
 
 	agents:
 		facilitator facilitator agentArchClass c4jason.CAgentArch;
-		robot robot agentArchClass c4jason.CAgentArch #3;
+		robot2 robot2 agentArchClass c4jason.CAgentArch #2;
 
 	classpath: 
 		"D:\\Facultate_Mihai\\Dizertatie\\cartago-2.0.1\\lib\\c4jason.jar";
