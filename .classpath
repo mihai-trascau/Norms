@@ -5,6 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/c4jason.jar"/>
 	<classpathentry kind="lib" path="lib/jason.jar"/>
-	<classpathentry kind="lib" path="D:/Work/Facultate/An6/Dizertatie/cartago-2.0.1/lib/myCartago.jar"/>
+	<classpathentry kind="lib" path="lib/cartago.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
