@@ -59,18 +59,19 @@ norm([time(5),time(6)],[time(10)],work).
 	plan(ID,X,Y);
 	!checkValidity(ID).
 	
-+!checkValidity(ID): true
++!checkValidity(MyID): true
 <-	.println("checkValidity start");
-	.findall(AgentID, (path(AgentID,Path,_) & (AgentID \== ID)), L);
-	?path(ID,MyPath,0);
+	.findall(AgentID, (path(AgentID,Path,_) & (AgentID \== MyID)), L);
+	?path(MyID,MyPath,0);
 	if (L==[]) {
-		.println("NU EXISTA PATH-URI");
-		-path(ID,MyPath,0);
-		+path(ID,MyPath,1);
+		.println(MyID,": NU EXISTA PATH-URI");
+		commitPath(MyID,MyPath);
+		//-path(MyID,MyPath,0);
+		//+path(MyID,MyPath,1);
 	}
 	else {
-		.println("EXISTA PATH-URI");
-		!solveConflicts(ID);
+		.println(MyID,": EXISTA PATH-URI");
+		//!solveConflicts(MyID);
 	}
 	.println("checkValidity end").
 
@@ -90,7 +91,6 @@ norm([time(5),time(6)],[time(10)],work).
 		.println("EXISTA PATH-URI UNCOMMITED");
 		.min(L0,Min);
 		if (MyID <= Min) {
-			//.println("==================================");
 			.findall(Path, (path(ID,Path,1) & (ID \== MyID)), L1);
 			replan(MyID, MyPath, L1);
 		}

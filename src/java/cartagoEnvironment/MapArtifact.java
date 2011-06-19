@@ -7,38 +7,26 @@ import cartago.*;
 
 import env.Map;
 import env.Position;
-import env.Position.DIRECTION;
 
 public class MapArtifact extends Artifact {
 	
 	private Map map;
 	private Vector<Position> agentPosition;
 	private int registeredAgents;
-	private Vector<Integer> actionInThisRound;	//AT
-	private int tick;							//AT
-	
-	private int queuedActions;
+	private Vector<Integer> actionInThisRound;
+	private int tick;
+	private int currentPlanerID;
 	
 	void init() {
 		map = new Map(new File("res/map.in"));
 		agentPosition = new Vector<Position>();
 		registeredAgents = 0;
-		queuedActions = 0;
 		
 		map.readMap();
 		map.printMap();
 		
-		actionInThisRound = new Vector<Integer>();	//AT
-		tick = 0;									//AT
-		
-		/*Position[] path1 = {new Position(0,2,0), new Position(1,2,1), new Position(1,3,2), new Position(1,4,3), 
-				new Position(2,4,4), new Position(3,4,5)};
-		Position[] path2 = {new Position(1,1,0), new Position(1,2,1), new Position(1,3,2), new Position(1,4,3),
-				new Position(1,5,4)};
-		Position[] path3 = {new Position(4,4,8), new Position(3,4,9), new Position(2,4,10)};
-		this.defineObsProperty("path1", path1, 0);
-		this.defineObsProperty("path2", path2, 0);
-		this.defineObsProperty("path3", path3, 0);*/
+		actionInThisRound = new Vector<Integer>();
+		tick = 0;
 	}	
 	
 	/**
@@ -51,35 +39,11 @@ public class MapArtifact extends Artifact {
 	void register(OpFeedbackParam<Integer> agentID) {
 		Position initPos = map.getInitialPosition();
 		agentPosition.add(initPos);
-		defineObsProperty("pos",registeredAgents,initPos.getX(),initPos.getY());
+		defineObsProperty("pos",registeredAgents,initPos.getX(),initPos.getY(),0);
 		agentID.set(registeredAgents);
 		registeredAgents++;
 		
 		actionInThisRound.add(0);
-	}
-	
-	@OPERATION (guard="synchronize")
-	void move(int agentID, int dir) {
-		Position nextPos = agentPosition.get(agentID).getNextPosition(DIRECTION.values()[dir]);
-		if(!map.isValid(nextPos))
-			failed("Invalid move","invalid_move");
-		else
-		{
-			ObsProperty prop = getObsPropertyByTemplate(
-					"pos",
-					agentID,
-					agentPosition.get(agentID).getX(),
-					agentPosition.get(agentID).getY());
-			if(prop == null)
-					System.err.println("NULL PROPERTY");
-			else
-			{
-				prop.updateValues(agentID,nextPos.getX(),nextPos.getY());
-				registerAction(agentID);
-				agentPosition.set(agentID, nextPos);
-				System.out.println(agentID + ": " + tick + " " + nextPos.toString());
-			}
-		}
 	}
 	
 	void registerAction(int agentID) {
@@ -98,6 +62,46 @@ public class MapArtifact extends Artifact {
 		return false;
 	}
 	
+	@OPERATION
+	public void initNorms() {
+		int normID = 0;
+		defineObsProperty("push_norm",
+				normID,
+				"+!norm_activation("+normID+",AgID) : true <-" +
+						".println(\"check norm \","+normID+");" +
+						".findall(pos(X,Y,T),pos(AgID,X,Y,T),L1);" +
+						".findall(pos(X,Y,T),(pos(ID,X,Y,T) & not ID==AgID),L2);" +
+						".intersection(L1,L2,L);" +
+						".length(L,N);" +
+						"N > 0;" +
+						".",
+				"",
+				"+!norm_content("+normID+",AgID) : true <-" +
+						"replanPath(AgID).",
+				"facilitator"
+				);
+		normID++;
+		/*defineObsProperty("push_norm",
+				normID,
+				"+!norm_activation("+normID+") : true <- .println(\"check \","+normID+").",
+				"",
+				"",
+				"facilitator"
+				);
+		normID++;*/
+		int[] normIDList = new int[normID];
+		for (int i=0; i<normID; i++)
+			normIDList[i] = i;
+		defineObsProperty("norm_id_list", normIDList);
+	}
+	
+	@OPERATION
+	void replanPath(int agentID)
+	{
+		System.out.println("replaning "+agentID);
+	}
+	
+	//adjacency list of a cell
 	Vector<Position> getNeighbours(Position p) {
 		Vector<Position> neighbours = new Vector<Position>();
 		int x = p.getX();
@@ -117,6 +121,7 @@ public class MapArtifact extends Artifact {
 		return neighbours;
 	}
 	
+	//BFS traversal
 	Vector<Position> findPath(Position source, Position destination) {
 		LinkedList<Position> queue = new LinkedList<Position>();
 		HashSet<Position> visited = new HashSet<Position>();
@@ -147,90 +152,40 @@ public class MapArtifact extends Artifact {
 		return null;
 	}
 	
-	@OPERATION
-	void plan(int agentID, int x, int y) {
+	boolean syncPlanGeneral(int agentID) {
+		if (currentPlanerID == -1)
+		{
+			currentPlanerID = agentID;
+			return true;
+		}
+		if (currentPlanerID == agentID)
+			return true;
+		return false;
+	}
+	
+	@GUARD
+	boolean syncPlan(int agentID, int x, int y) {
+		return syncPlanGeneral(agentID);
+	}
+	
+	@GUARD
+	boolean syncCommitPath(int agentID, Object[] myPathObj) {
+		boolean result = syncPlanGeneral(agentID);
+		currentPlanerID = -1;
+		return result;
+	}
+	
+	@GUARD
+	boolean syncReplan(int agentID, Object[] myPathObj, Object[] paths) {
+		boolean result = syncPlanGeneral(agentID);
+		currentPlanerID = -1;
+		return result;
+	}
+	
+	@OPERATION //(guard="syncPlan")
+	void planPath(int agentID, int x, int y) {
 		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
-		Position[] pathArray = new Position[pathVector.size()];
-		for (int i=0; i<pathVector.size(); i++)
-			pathArray[i] = pathVector.get(i);
-		defineObsProperty("path", agentID, pathArray, 0);
-		
-		/*Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
-		String[] pathArray = new String[pathVector.size()];
-		for (int i=0; i<pathVector.size(); i++)
-			pathArray[i] = pathVector.get(i).toString() + ":" + i;
-		defineObsProperty("path", agentID, pathArray, 0);*/
-	}
-	
-	@OPERATION
-	void replan(int agentID, Object[] myPathObj, Object[] paths) {
-		Vector<Position> myPath = new Vector<Position>();
-		for (int i=0; i<myPathObj.length; i++)
-			myPath.add((Position)myPathObj[i]);
-		
-		//for each path in list of paths
-		for (int pathNo=0; pathNo<paths.length; pathNo++) {
-			Object[] pathObj = (Object[])paths[pathNo];
-			Vector<Position> path = new Vector<Position>();
-			for (int i=0; i<pathObj.length; i++)
-				path.add((Position)pathObj[i]);
-			
-			for (int i=0; i<myPath.size(); i++) {
-				if (path.contains(myPath.get(i))) {
-					Position index = findOverlaping(myPath, path, i, path.indexOf(myPath.get(i)));
-					for (i=index.getX(); i<=index.getY(); i++)
-						myPath.add(i, myPath.get(i-1).resetTime(1));
-					for (i=index.getY()+1; i<myPath.size(); i++)
-						myPath.set(i, myPath.get(i).resetTime(index.getY()-index.getX()+1));
-					System.out.println("partial path: "+myPath);
-					continue;
-				}
-			}
-		}
-		System.out.println("   final path: "+myPath);
-		Position[] pathArray = new Position[myPath.size()];
-		for (int i=0; i<myPath.size(); i++)
-			pathArray[i] = myPath.get(i);
-		//defineObsProperty("path", agentID, pathArray, 1);
-		ObsProperty prop = getObsPropertyByTemplate("path", agentID);
-		prop.updateValues(agentID, pathArray, 1);
-	}
-	
-	Position findOverlaping(Vector<Position> myPath, Vector<Position> path, int index1, int index2) {
-		int down = index1;
-		int up = index1;
-		TreeSet<Integer> index = new TreeSet<Integer>();
-		index.add(index2);
-		while (true) {
-			if (down-1 < 0)
-				break;
-			Position pos = myPath.get(down-1);
-			if (index.first()-1>=0 && pos.like(path.get(index.first()-1))) {
-				index.add(index.first()-1);
-				down--;
-			}
-			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1))) {
-				index.add(index.last()+1);
-				down--;
-			}
-			else
-				break;
-		}
-		while (true) {
-			if (up+1 >= myPath.size())
-				break;
-			Position pos = myPath.get(up+1);
-			if (index.first()-1>=0 && pos.like(path.get(index.first()-1))) {
-				index.add(index.first()-1);
-				up++;
-			}
-			else if (index.last()+1<path.size() && pos.like(path.get(index.last()+1))) {
-				index.add(index.last()+1);
-				up++;
-			}
-			else
-				break;
-		}
-		return new Position(down, up+1);
-	}
+		for (Position pos: pathVector)
+			defineObsProperty("pos", agentID, pos.getX(), pos.getY(), pos.getTime());
+	}	
 }
