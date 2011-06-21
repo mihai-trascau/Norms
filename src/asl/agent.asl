@@ -1,16 +1,15 @@
-goTo(0,2,6).
-goTo(1,2,7).
+goTo("agent1",2,6).
+goTo("agent2",2,7).
 
 !start.
 
 +!start: true <-
 	?getMap(MAP_ID);
-	register(MyID) [artifact_id(MAP_ID)];
-	+myID(MyID);
-	println("Registered with ID:",MyID);
+	.my_name(MyName);
+	register(MyName) [artifact_id(MAP_ID)];
 	focus(MAP_ID);
 	.wait(500);
-	!work(MyID).
+	!work.
 	
 /* Find the MAP_ID */
 +?getMap(MAP_ID): true <-
@@ -23,27 +22,30 @@ goTo(1,2,7).
 +push_norm(NormID, Activation, Expiration, Content, Source) : true <-
 	.add_plan(Activation, Source);
 	if (Expiration \== "") {
-		.add_plan(Expiration, Source);
+		.add_plan(Expiration,Source);
 	}
 	.add_plan(Content, Source);
 	.println("added norm ",NormID).	
 	
-+!work(MyID): true <-
-	?goTo(MyID,X,Y);
-	planPath(MyID,X,Y);
-	!check_all_norms(MyID).
++!work: true <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?goTo(MyName,X,Y);
+	planPath(MyName,X,Y);
+	!check_all_norms.
 	
-+!check_all_norms(MyID) : true <-
++!check_all_norms : true <-
 	?norm_id_list(L);
 	for (.member(NormID,L)) {
-		!check_norm(NormID, MyID);
+		!check_norm(NormID);
 	}
 	.println("checked all").	
 		
-+!check_norm(NormID, MyID) : true <-
-	!norm_activation(NormID,MyID);
-	!norm_content(NormID,MyID).
++!check_norm(NormID) : true <-
+	.println("check norm ",NormID);
+	!norm_activation(NormID,Conflicts);
+	!norm_content(NormID,Conflicts).
 	
--!check_norm(NormID, MyID) : true <-
+-!check_norm(NormID) : true <-
 	true.
 	

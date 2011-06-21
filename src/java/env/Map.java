@@ -20,15 +20,25 @@ public class Map
 		map = null;
         height = 0;
         width = 0;
-        
         initialPositions = new Vector<Position>();
         this.mapFile = mapFile;
 	}
 	
+	public Map(Map m) {
+		height = m.height;
+		width = m.width;
+		map = new int[height][width];
+		for (int i=0; i<height; i++)
+			for (int j=0; j<width; j++)
+				map[i][j] = m.map[i][j];
+		initialPositions = new Vector<Position>();
+	}
+	
 	public boolean isValid(Position p)
 	{
-		if(p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width &&  map[p.getX()][p.getY()] == 0)
-			return true;
+		if (p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width)
+			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() < map[p.getX()][p.getY()])
+				return true;
 		return false;
 	}
 	
@@ -91,6 +101,10 @@ public class Map
     	}
     	else
     		System.out.println("MAP NOT LOADED");
+    }
+    
+    public void setPosition(int x, int y, int val) {
+    	map[x][y] = val;
     }
 	
 	public Position getInitialPosition()

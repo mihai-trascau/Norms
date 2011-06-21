@@ -11,7 +11,7 @@ import env.Position;
 public class MapArtifact extends Artifact {
 	
 	private Map map;
-	private Vector<Position> agentPosition;
+	private Hashtable<String,Position> agentPosition;
 	private int registeredAgents;
 	private Vector<Integer> actionInThisRound;
 	private int tick;
@@ -19,14 +19,14 @@ public class MapArtifact extends Artifact {
 	
 	void init() {
 		map = new Map(new File("res/map.in"));
-		agentPosition = new Vector<Position>();
+		agentPosition = new Hashtable<String,Position>();
 		registeredAgents = 0;
 		
 		map.readMap();
 		map.printMap();
 		
 		actionInThisRound = new Vector<Integer>();
-		tick = 0;
+		tick = 1;
 	}	
 	
 	/**
@@ -36,13 +36,10 @@ public class MapArtifact extends Artifact {
 	 * registering on the map.
 	 */
 	@OPERATION
-	void register(OpFeedbackParam<Integer> agentID) {
+	void register(String name) {
 		Position initPos = map.getInitialPosition();
-		agentPosition.add(initPos);
-		defineObsProperty("pos",registeredAgents,initPos.getX(),initPos.getY(),0);
-		agentID.set(registeredAgents);
+		agentPosition.put(name, initPos);
 		registeredAgents++;
-		
 		actionInThisRound.add(0);
 	}
 	
@@ -67,32 +64,43 @@ public class MapArtifact extends Artifact {
 		int normID = 0;
 		defineObsProperty("push_norm",
 				normID,
-				"+!norm_activation("+normID+",AgID) : true <-" +
-						".println(\"check norm \","+normID+");" +
-						".findall(pos(X,Y,T),pos(AgID,X,Y,T),L1);" +
-						".findall(pos(X,Y,T),(pos(ID,X,Y,T) & not ID==AgID),L2);" +
+				"+!norm_activation("+normID+",Results) : true <-" +
+						".my_name(MyNameTerm);" +
+						".term2string(MyNameTerm,MyName);" +
+						".findall(pos(X,Y,T),pos(MyName,X,Y,T),L1);" +
+						".findall(pos(X,Y,T),(pos(Name,X,Y,T) & not Name==MyName),L2);" +
 						".intersection(L1,L2,L);" +
+						".length(L,N);" +
+						" N > 0;" +
 						".member(pos(X,Y,T),L);" +
-						".findall(ID,(pos(ID,X,Y,T) & not ID==AgID),Agents);" +
-						".member(ConflictID,Agents);" +
-						".findall(T1,pos(ConflictID,X1,Y1,T1),L3);" +
-						".length(L1,N1);" +
-						".length(L3,N3);" +
-						" N3 < N1.",
+						".findall(Name,(pos(Name,X,Y,T) & not Name==MyName),ConflictAgents);" +
+						" Results = ConflictAgents.",
 				"",
-				"+!norm_content("+normID+",AgID) : true <-" +
-						"replanPath(AgID).",
+				"+!norm_content("+normID+",Conflicts) : true <-" +
+						".println(\"apply norm \","+normID+");" +
+						".my_name(MyNameTerm);" +
+						".term2string(MyNameTerm,MyName);" +
+						".member(Conflict,Conflicts);" +
+						".findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
+						".findall(pos(X,Y,T),pos(Conflict,X,Y,T),L2);" +
+						".length(L1,N1);" +
+						".length(L2,N2);" +
+						".println(\"lengths: \",N1,N2);" +
+						" if (N2 < N1) {" +
+						"	.println(\"case 1\");" +
+						"	dropOldPlan(L1);" +
+						"	?goTo(MyName,DX,DY);" +
+						"	replanPath(MyName,DX,DY,L2);" +
+						"}" +
+						"else {" +
+						"	.println(\"case 2\");" +
+						"	term2string(ConflictTerm,Conflict);" +
+						"	send(ConflictTerm,tell,replan(555555555555555));" +
+						"}" +
+						".println(ConflictTerm).",
 				"facilitator"
 				);
 		normID++;
-		/*defineObsProperty("push_norm",
-				normID,
-				"+!norm_activation("+normID+") : true <- .println(\"check \","+normID+").",
-				"",
-				"",
-				"facilitator"
-				);
-		normID++;*/
 		int[] normIDList = new int[normID];
 		for (int i=0; i<normID; i++)
 			normIDList[i] = i;
@@ -100,9 +108,19 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void replanPath(int agentID)
-	{
-		System.out.println("replaning "+agentID);
+	void replanPath(String name, int x, int y, Object[] path) {
+		System.out.println("replaning "+name);
+		Map myMap = new Map(map);
+		for (int i=0; i<path.length; i++) {
+			Position pos = new Position((String)path[i]);
+			myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
+		}
+		planPath(name, x, y);
+	}
+	
+	@OPERATION
+	void dropOldPlan(Object[] path) {
+		System.out.println(path[0]);
 	}
 	
 	//adjacency list of a cell
@@ -110,45 +128,52 @@ public class MapArtifact extends Artifact {
 		Vector<Position> neighbours = new Vector<Position>();
 		int x = p.getX();
 		int y = p.getY();
-		Position neighbour = new Position(x, y-1);
+		int t = p.getTime();
+		Position neighbour = new Position(x, y-1, t+1);
 		if (map.isValid(neighbour))
 			neighbours.add(neighbour);
-		neighbour = new Position(x, y+1);
+		neighbour = new Position(x, y+1, t+1);
 		if (map.isValid(neighbour))
 			neighbours.add(neighbour);
-		neighbour = new Position(x-1, y);
+		neighbour = new Position(x-1, y, t+1);
 		if (map.isValid(neighbour))
 			neighbours.add(neighbour);
-		neighbour = new Position(x+1, y);
+		neighbour = new Position(x+1, y, t+1);
 		if (map.isValid(neighbour))
 			neighbours.add(neighbour);
 		return neighbours;
 	}
 	
-	//BFS traversal
+	//BF traversal
 	Vector<Position> findPath(Position source, Position destination) {
+		source.setTime(tick);
+		Vector<Position> path = new Vector<Position>();
+		if (source.equals(destination)) {
+			path.add(source);
+			return path;
+		}
 		LinkedList<Position> queue = new LinkedList<Position>();
 		HashSet<Position> visited = new HashSet<Position>();
 		Hashtable<Position, Position> parents = new Hashtable<Position, Position>();
 		queue.add(source);
 		while (!queue.isEmpty()) {
-			Position first = queue.removeFirst();
-			for (Position next: getNeighbours(first))
+			Position current = queue.removeFirst();
+			for (Position next: getNeighbours(current))
 				if (!visited.contains(next)) {
+					next.setTime(current.getTime()+1);
 					visited.add(next);
 					queue.add(next);
-					parents.put(next, first);
+					parents.put(next, current);
 					//destination reached
 					if (next.equals(destination)) {
-						Vector<Position> path = new Vector<Position>();
 						Position p = next;
 						do {
 							path.add(0, p);
 							p = parents.get(p);
 						} while (!p.equals(source));
 						path.add(0, p);
-						for (int i=0; i<path.size(); i++)
-							path.get(i).setTime(i);
+						//for (int i=0; i<path.size(); i++)
+						//	path.get(i).setTime(i);
 						return path;
 					}
 				}
@@ -156,7 +181,14 @@ public class MapArtifact extends Artifact {
 		return null;
 	}
 	
-	boolean syncPlanGeneral(int agentID) {
+	@OPERATION //(guard="syncPlan")
+	void planPath(String name, int x, int y) {
+		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y));
+		for (Position pos: pathVector)
+			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
+	}
+	
+	/*boolean syncPlanGeneral(int agentID) {
 		if (currentPlanerID == -1)
 		{
 			currentPlanerID = agentID;
@@ -184,12 +216,5 @@ public class MapArtifact extends Artifact {
 		boolean result = syncPlanGeneral(agentID);
 		currentPlanerID = -1;
 		return result;
-	}
-	
-	@OPERATION //(guard="syncPlan")
-	void planPath(int agentID, int x, int y) {
-		Vector<Position> pathVector = findPath(agentPosition.get(agentID), new Position(x,y));
-		for (Position pos: pathVector)
-			defineObsProperty("pos", agentID, pos.getX(), pos.getY(), pos.getTime());
-	}	
+	}*/
 }

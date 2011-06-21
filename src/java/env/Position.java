@@ -30,6 +30,12 @@ public class Position
 		this.time = time;
 	}
 	
+	public Position(String pos) {
+		this.x = Integer.parseInt(pos.substring(pos.indexOf('(')+1, pos.indexOf(',')));
+		this.y = Integer.parseInt(pos.substring(pos.indexOf(',')+1, pos.lastIndexOf(',')));
+		this.time = Integer.parseInt(pos.substring(pos.lastIndexOf(',')+1, pos.indexOf(')')));
+	}
+	
 	public int getX() {
 		return x;
 	}
@@ -106,7 +112,7 @@ public class Position
 	public boolean equals(Object obj)
 	{
 		Position p = (Position)obj;
-		if (this.x == p.getX() && this.y == p.getY() && this.time == p.getTime())
+		if (this.x == p.getX() && this.y == p.getY()/* && this.time == p.getTime()*/)
 			return true;
 		return false;
 	}
