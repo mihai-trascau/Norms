@@ -116,6 +116,10 @@ public class Map
     public void setPosition(int x, int y, int val) {
     	map[x][y] = val;
     }
+    
+    public int getPosition(int x, int y) {
+    	return map[x][y];
+    }
 	
 	public Position getInitialPosition()
 	{

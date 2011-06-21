@@ -1,9 +1,9 @@
 !start.
 
-+!start: true
-<-	!setupMap(MAP_ID).
++!start: true <-
+	!setupMap(MapID).
 
-+!setupMap(MAP_ID): true
-<-	makeArtifact("map","cartagoEnvironment.MapArtifact",[],MAP_ID);
++!setupMap(MapID): true <-
+	makeArtifact("map","cartagoEnvironment.MapArtifact",[],MapID);
 	println("map initialised");
 	initNorms.

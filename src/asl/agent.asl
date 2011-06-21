@@ -1,6 +1,3 @@
-//go_to("agent1",2,6).
-//go_to("agent2",2,7).
-
 !start.
 
 +!start: true <-
