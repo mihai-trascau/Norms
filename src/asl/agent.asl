@@ -4,20 +4,20 @@
 !start.
 
 +!start: true <-
-	?getMap(MAP_ID);
-	.my_name(MyName);
-	register(MyName) [artifact_id(MAP_ID)];
-	focus(MAP_ID);
+	?get_map(MapID);
+	.my_name(MyNameTerm);
+	register(MyNameTerm) [artifact_id(MapID)];
+	focus(MapID);
 	.wait(500);
 	!work.
 	
 /* Find the MAP_ID */
-+?getMap(MAP_ID): true <-
-	lookupArtifact("map", MAP_ID).
++?get_map(MapID): true <-
+	lookupArtifact("map", MapID).
 
--?getMap(MAP_ID): true <-
+-?get_map(MapID): true <-
 	.wait(10);
-	?getMap(MAP_ID).
+	?get_map(MapID).
 
 +push_norm(NormID, Activation, Expiration, Content, Source) : true <-
 	.add_plan(Activation, Source);
@@ -31,7 +31,7 @@
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	?go_to(MyName,X,Y);
-	planPath(MyName,X,Y);
+	plan_path(MyName,X,Y);
 	!check_all_norms.
 	
 +!check_all_norms : true <-
@@ -47,5 +47,5 @@
 	!norm_content(NormID,Conflicts).
 	
 -!check_norm(NormID) : true <-
-	true.
+	.println("A CRAPAT CHECK NORM !!!").
 	

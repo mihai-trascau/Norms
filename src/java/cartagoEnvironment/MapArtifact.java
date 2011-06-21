@@ -67,6 +67,54 @@ public class MapArtifact extends Artifact {
 	@OPERATION
 	public void initNorms() {
 		int normID = 0;
+		String[] norm_content = new String[2];
+		norm_content[0] = 
+			"+!norm_content("+normID+",Conflicts) : true <-" +
+			"	.println(\"inconsitency detected with norm \","+normID+");" +
+			"	.my_name(MyNameTerm);" +
+			"	.term2string(MyNameTerm,MyName);" +
+			"	.member(Conflict,Conflicts);" +
+			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
+			"	.findall(pos(X,Y,T),pos(Conflict,X,Y,T),L2);" +
+			"	.length(L1,N1);" +
+			"	.length(L2,N2);" +
+			" 	if (N2 < N1) {" +
+			"		.println(\"path replan caused by norm "+normID+"\");" +
+			"		drop_path_plan(L1);" +
+			"		?go_to(MyName,DX,DY);" +
+			"		replan_path(MyName,DX,DY,L2);" +
+			"	}" +
+			"	else {" +
+			"		.term2string(ConflictTerm,Conflict);" +
+			"		if (N2 == N1) {" +
+			"			if (MyName < Conflict) {" +
+			"				.send(ConflictTerm,achieve,path_conflict(MyName,L1));" +
+			"				.println(\"sent path replan message (name based) to \",Conflict);" +
+			"			}" +
+			"			else {" +
+			"				.println(\"must replan path due to \",Conflict);" +
+			"				drop_path_plan(L1);" +
+			"				?go_to(MyName,DX,DY);" +
+			"				replan_path(MyName,DX,DY,L2);" +
+			"			}" +
+			"		}" +
+			"		else {" +
+			"			.send(ConflictTerm,achieve,path_conflict(MyName,L1));" +
+			"			.println(\"sent path conflict message to \",Conflict);" +
+			"		}" +
+			"	}" +
+			"	.println(\"plan now consistent with norm "+normID+"\").";
+		norm_content[1] = 
+			"+!path_conflict(RequesterName,RequesterPath) : true <-" +
+			"	.println(\"caca maca\");" +
+			"	.my_name(MyNameTerm);" +
+			"	.term2string(MyNameTerm,MyName);" +
+			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
+			"	.println(\"ai mast drop \",L1);" +
+			"	drop_path_plan(L1);" +
+			"	?go_to(MyName,DX,DY);" +
+			"	.println(\"ma duc la \",DX,\" \",DY);" +
+			"	replan_path(MyName,DX,DY,RequesterPath).";
 		defineObsProperty("push_norm",
 				normID,
 				"+!norm_activation("+normID+",Results) : true <-" +
@@ -81,28 +129,7 @@ public class MapArtifact extends Artifact {
 						".findall(Name,(pos(Name,X,Y,T) & not Name==MyName),ConflictAgents);" +
 						" Results = ConflictAgents.",
 				"",
-				"+!norm_content("+normID+",Conflicts) : true <-" +
-						".println(\"apply norm \","+normID+");" +
-						".my_name(MyNameTerm);" +
-						".term2string(MyNameTerm,MyName);" +
-						".member(Conflict,Conflicts);" +
-						".findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
-						".findall(pos(X,Y,T),pos(Conflict,X,Y,T),L2);" +
-						".length(L1,N1);" +
-						".length(L2,N2);" +
-						".println(\"lengths: \",N1,N2);" +
-						" if (N2 < N1) {" +
-						"	.println(\"path replan caused by norm "+normID+"\");" +
-						"	drop_path_plan(L1);" +
-						"	?goTo(MyName,DX,DY);" +
-						"	replanPath(MyName,DX,DY,L2);" +
-						"}" +
-						"else {" +
-						"	.term2string(ConflictTerm,Conflict);" +
-						"	.send(ConflictTerm,tell,replan_path(555555555555555));" +
-						"	.println(\"sent path replan message to \",Conflict);" +
-						"}" +
-						".println(\"plan now consistent with norm "+normID+"\").",
+				norm_content,
 				"facilitator"
 				);
 		normID++;
@@ -113,7 +140,7 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void replanPath(String name, int x, int y, Object[] path) {
+	void replan_path(String name, int x, int y, Object[] path) {
 		System.out.println("replaning "+name);
 		Map myMap = new Map(map);
 		for (int i=0; i<path.length; i++) {
@@ -126,7 +153,7 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void drop_plan_path(Object[] path) {
+	void drop_path_plan(Object[] path) {
 		for (int i=0; i<path.length; i++) {
 			String pos = (String)path[i];
 			String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");
@@ -200,7 +227,7 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION //(guard="syncPlan")
-	void planPath(String name, int x, int y) {
+	void plan_path(String name, int x, int y) {
 		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), map);
 		for (Position pos: pathVector)
 			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
