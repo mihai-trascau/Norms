@@ -1,5 +1,7 @@
 package env;
 
+import cartagoEnvironment.MapArtifact;
+
 public class Position
 {
 	private int x;
@@ -64,6 +66,7 @@ public class Position
 	{
 		this.x = newPosition.getX();
 		this.y = newPosition.getY();
+		this.time = newPosition.getTime();
 	}
 	
 	public void update(Position.DIRECTION dir)

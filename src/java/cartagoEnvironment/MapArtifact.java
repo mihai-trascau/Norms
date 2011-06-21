@@ -15,7 +15,8 @@ public class MapArtifact extends Artifact {
 	private int registeredAgents;
 	private Vector<Integer> actionInThisRound;
 	private int tick;
-	private int currentPlanerID;
+	//private int currentPlanerID;
+	public static boolean debug = false;
 	
 	void init() {
 		map = new Map(new File("res/map.in"));
@@ -94,10 +95,10 @@ public class MapArtifact extends Artifact {
 						"}" +
 						"else {" +
 						"	.println(\"case 2\");" +
-						"	term2string(ConflictTerm,Conflict);" +
-						"	send(ConflictTerm,tell,replan(555555555555555));" +
+						"	.term2string(ConflictTerm,Conflict);" +
+						"	.send(ConflictTerm,tell,replan(555555555555555));" +
 						"}" +
-						".println(ConflictTerm).",
+						".println(\"norm applied\").",
 				"facilitator"
 				);
 		normID++;
@@ -115,37 +116,48 @@ public class MapArtifact extends Artifact {
 			Position pos = new Position((String)path[i]);
 			myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
 		}
-		planPath(name, x, y);
+		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), myMap);
+		for (Position pos: pathVector)
+			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
 	}
 	
 	@OPERATION
 	void dropOldPlan(Object[] path) {
-		System.out.println(path[0]);
+		for (int i=0; i<path.length; i++) {
+			String pos = (String)path[i];
+			String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");
+			//removeObsProperty("pos");
+			String name = splitPos[0].replace("\"", "");
+			int x = Integer.parseInt(splitPos[1]);
+			int y = Integer.parseInt(splitPos[2]);
+			int t = Integer.parseInt(splitPos[3]);
+			removeObsPropertyByTemplate("pos", name, x, y, t);
+		}
 	}
 	
 	//adjacency list of a cell
-	Vector<Position> getNeighbours(Position p) {
+	Vector<Position> getNeighbours(Position p, Map myMap) {
 		Vector<Position> neighbours = new Vector<Position>();
 		int x = p.getX();
 		int y = p.getY();
 		int t = p.getTime();
 		Position neighbour = new Position(x, y-1, t+1);
-		if (map.isValid(neighbour))
+		if (myMap.isValid(neighbour))
 			neighbours.add(neighbour);
 		neighbour = new Position(x, y+1, t+1);
-		if (map.isValid(neighbour))
+		if (myMap.isValid(neighbour))
 			neighbours.add(neighbour);
 		neighbour = new Position(x-1, y, t+1);
-		if (map.isValid(neighbour))
+		if (myMap.isValid(neighbour))
 			neighbours.add(neighbour);
 		neighbour = new Position(x+1, y, t+1);
-		if (map.isValid(neighbour))
+		if (myMap.isValid(neighbour))
 			neighbours.add(neighbour);
 		return neighbours;
 	}
 	
 	//BF traversal
-	Vector<Position> findPath(Position source, Position destination) {
+	Vector<Position> findPath(Position source, Position destination, Map myMap) {
 		source.setTime(tick);
 		Vector<Position> path = new Vector<Position>();
 		if (source.equals(destination)) {
@@ -153,14 +165,15 @@ public class MapArtifact extends Artifact {
 			return path;
 		}
 		LinkedList<Position> queue = new LinkedList<Position>();
-		HashSet<Position> visited = new HashSet<Position>();
+		Vector<Position> visited = new Vector<Position>();
 		Hashtable<Position, Position> parents = new Hashtable<Position, Position>();
 		queue.add(source);
+		visited.add(source);
 		while (!queue.isEmpty()) {
 			Position current = queue.removeFirst();
-			for (Position next: getNeighbours(current))
+			for (Position next: getNeighbours(current, myMap))
+			{
 				if (!visited.contains(next)) {
-					next.setTime(current.getTime()+1);
 					visited.add(next);
 					queue.add(next);
 					parents.put(next, current);
@@ -177,13 +190,14 @@ public class MapArtifact extends Artifact {
 						return path;
 					}
 				}
+			}
 		}
 		return null;
 	}
 	
 	@OPERATION //(guard="syncPlan")
 	void planPath(String name, int x, int y) {
-		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y));
+		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), map);
 		for (Position pos: pathVector)
 			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
 	}
