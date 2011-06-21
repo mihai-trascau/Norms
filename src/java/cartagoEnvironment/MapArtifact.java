@@ -15,8 +15,7 @@ public class MapArtifact extends Artifact {
 	private int registeredAgents;
 	private Vector<Integer> actionInThisRound;
 	private int tick;
-	//private int currentPlanerID;
-	public static boolean debug = false;
+	private String currentNormChecker;
 	
 	void init() {
 		map = new Map(new File("res/map.in"));
@@ -67,7 +66,7 @@ public class MapArtifact extends Artifact {
 	@OPERATION
 	public void initNorms() {
 		int normID = 0;
-		String[] norm_content = new String[3];
+		String[] norm_content = new String[2];
 		norm_content[0] = 
 			"+!norm_content("+normID+",Conflicts) : true <-" +
 			"	.println(\"inconsitency detected with norm \","+normID+");" +
@@ -106,16 +105,16 @@ public class MapArtifact extends Artifact {
 			"	.println(\"plan now consistent with norm "+normID+"\").";
 		norm_content[1] = 
 			"+!path_conflict(RequesterName,RequesterPath) : true <-" +
-			"	.println(\"path conflict message received from \",RequesterName);" +
 			"	.my_name(MyNameTerm);" +
+			"	 check_norm_begin(MyNameTerm);" +
+			"	.println(\"path conflict message received from \",RequesterName);" +
 			"	.term2string(MyNameTerm,MyName);" +
 			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
 			"	drop_path_plan(L1);" +
 			"	?go_to(MyName,DX,DY);" +
-			"	replan_path(MyName,DX,DY,RequesterPath).";
-		norm_content[2] =
-			"-drop_plan_path [error_msg(Msg)] <-" +
-			"	.println(msg).";
+			"	replan_path(MyName,DX,DY,RequesterPath);" +
+			"	.println(\"resolved path conflict with \",RequesterName);" +
+			"	 check_norm_end(MyNameTerm).";
 		defineObsProperty("push_norm",
 				normID,
 				"+!norm_activation("+normID+",Results) : true <-" +
@@ -128,7 +127,7 @@ public class MapArtifact extends Artifact {
 						" N > 0;" +
 						".member(pos(X,Y,T),L);" +
 						".findall(Name,(pos(Name,X,Y,T) & not Name==MyName),ConflictAgents);" +
-						" Results = ConflictAgents.",
+						"Results = ConflictAgents.",
 				"",
 				norm_content,
 				"facilitator"
@@ -169,7 +168,7 @@ public class MapArtifact extends Artifact {
 			if(this.getObsPropertyByTemplate("pos", name, x, y, t) != null)
 				removeObsPropertyByTemplate("pos", name, x, y, t);
 			else
-				failed("path plan already deleted");
+				System.out.println("path plan already deleted");
 		}
 	}
 	
@@ -231,6 +230,32 @@ public class MapArtifact extends Artifact {
 			}
 		}
 		return null;
+	}
+	
+	@OPERATION (guard="syncBeginNormCheck")
+	void check_norm_begin(String name) {}
+	
+	@OPERATION (guard="syncEndNormCheck")
+	void check_norm_end(String name) {}
+	
+	@GUARD
+	boolean syncBeginNormCheck(String name) {
+		if (currentNormChecker == null)
+		{
+			currentNormChecker = name;
+			return true;
+		}
+		return false;
+	}
+	
+	@GUARD
+	boolean syncEndNormCheck(String name) {
+		if (currentNormChecker.equals(name))
+		{
+			currentNormChecker = null;
+			return true;
+		}
+		return false;
 	}
 	
 	@OPERATION //(guard="syncPlan")

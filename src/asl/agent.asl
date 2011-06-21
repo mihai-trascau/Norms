@@ -36,10 +36,13 @@
 	
 +!check_all_norms : true <-
 	?norm_id_list(L);
+	.my_name(MyNameTerm);
+	check_norm_begin(MyNameTerm);
 	for (.member(NormID,L)) {
 		!check_norm(NormID);
 	}
-	.println("consistent with all norms").	
+	.println("consistent with all norms");
+	check_norm_end(MyNameTerm).
 		
 +!check_norm(NormID) : true <-
 	.println("check consistency with norm ",NormID);
@@ -47,5 +50,5 @@
 	!norm_content(NormID,Conflicts).
 	
 -!check_norm(NormID) : true <-
-	.println("A CRAPAT CHECK NORM !!!").
+	.println("nu s-a activat norma ",NormID).
 	
