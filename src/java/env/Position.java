@@ -33,9 +33,11 @@ public class Position
 	}
 	
 	public Position(String pos) {
-		this.x = Integer.parseInt(pos.substring(pos.indexOf('(')+1, pos.indexOf(',')));
-		this.y = Integer.parseInt(pos.substring(pos.indexOf(',')+1, pos.lastIndexOf(',')));
-		this.time = Integer.parseInt(pos.substring(pos.lastIndexOf(',')+1, pos.indexOf(')')));
+		String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");
+		//String name = splitPos[0].replace("\"", "");
+		this.x = Integer.parseInt(splitPos[1]);
+		this.y = Integer.parseInt(splitPos[2]);
+		this.time = Integer.parseInt(splitPos[3]);
 	}
 	
 	public int getX() {

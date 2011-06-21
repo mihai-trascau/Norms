@@ -7,4 +7,3 @@
 <-	makeArtifact("map","cartagoEnvironment.MapArtifact",[],MAP_ID);
 	println("map initialised");
 	initNorms.
-	

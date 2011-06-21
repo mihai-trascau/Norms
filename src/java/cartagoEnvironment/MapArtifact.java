@@ -67,7 +67,7 @@ public class MapArtifact extends Artifact {
 	@OPERATION
 	public void initNorms() {
 		int normID = 0;
-		String[] norm_content = new String[2];
+		String[] norm_content = new String[3];
 		norm_content[0] = 
 			"+!norm_content("+normID+",Conflicts) : true <-" +
 			"	.println(\"inconsitency detected with norm \","+normID+");" +
@@ -75,7 +75,7 @@ public class MapArtifact extends Artifact {
 			"	.term2string(MyNameTerm,MyName);" +
 			"	.member(Conflict,Conflicts);" +
 			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
-			"	.findall(pos(X,Y,T),pos(Conflict,X,Y,T),L2);" +
+			"	.findall(pos(Conflict,X,Y,T),pos(Conflict,X,Y,T),L2);" +
 			"	.length(L1,N1);" +
 			"	.length(L2,N2);" +
 			" 	if (N2 < N1) {" +
@@ -89,7 +89,7 @@ public class MapArtifact extends Artifact {
 			"		if (N2 == N1) {" +
 			"			if (MyName < Conflict) {" +
 			"				.send(ConflictTerm,achieve,path_conflict(MyName,L1));" +
-			"				.println(\"sent path replan message (name based) to \",Conflict);" +
+			"				.println(\"sent path conflict message (name based) to \",Conflict);" +
 			"			}" +
 			"			else {" +
 			"				.println(\"must replan path due to \",Conflict);" +
@@ -106,15 +106,16 @@ public class MapArtifact extends Artifact {
 			"	.println(\"plan now consistent with norm "+normID+"\").";
 		norm_content[1] = 
 			"+!path_conflict(RequesterName,RequesterPath) : true <-" +
-			"	.println(\"caca maca\");" +
+			"	.println(\"path conflict message received from \",RequesterName);" +
 			"	.my_name(MyNameTerm);" +
 			"	.term2string(MyNameTerm,MyName);" +
 			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
-			"	.println(\"ai mast drop \",L1);" +
 			"	drop_path_plan(L1);" +
 			"	?go_to(MyName,DX,DY);" +
-			"	.println(\"ma duc la \",DX,\" \",DY);" +
 			"	replan_path(MyName,DX,DY,RequesterPath).";
+		norm_content[2] =
+			"-drop_plan_path [error_msg(Msg)] <-" +
+			"	.println(msg).";
 		defineObsProperty("push_norm",
 				normID,
 				"+!norm_activation("+normID+",Results) : true <-" +
@@ -148,8 +149,11 @@ public class MapArtifact extends Artifact {
 			myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
 		}
 		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), myMap);
-		for (Position pos: pathVector)
-			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
+		if(pathVector != null)
+			for (Position pos: pathVector)
+				defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
+		else
+			defineObsProperty("idle", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick);
 	}
 	
 	@OPERATION
@@ -162,7 +166,10 @@ public class MapArtifact extends Artifact {
 			int x = Integer.parseInt(splitPos[1]);
 			int y = Integer.parseInt(splitPos[2]);
 			int t = Integer.parseInt(splitPos[3]);
-			removeObsPropertyByTemplate("pos", name, x, y, t);
+			if(this.getObsPropertyByTemplate("pos", name, x, y, t) != null)
+				removeObsPropertyByTemplate("pos", name, x, y, t);
+			else
+				failed("path plan already deleted");
 		}
 	}
 	
