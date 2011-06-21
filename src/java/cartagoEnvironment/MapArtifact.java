@@ -38,9 +38,13 @@ public class MapArtifact extends Artifact {
 	 */
 	@OPERATION
 	void register(String name) {
-		Position initPos = map.getInitialPosition();
+		//Position initPos = map.getInitialPosition();
+		Position initPos = map.getInitialPositions().get(registeredAgents);
+		Position finalPos = map.getFinalPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
 		registeredAgents++;
+		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
+		defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
 		actionInThisRound.add(0);
 	}
 	
@@ -88,17 +92,17 @@ public class MapArtifact extends Artifact {
 						".length(L2,N2);" +
 						".println(\"lengths: \",N1,N2);" +
 						" if (N2 < N1) {" +
-						"	.println(\"case 1\");" +
-						"	dropOldPlan(L1);" +
+						"	.println(\"path replan caused by norm "+normID+"\");" +
+						"	drop_path_plan(L1);" +
 						"	?goTo(MyName,DX,DY);" +
 						"	replanPath(MyName,DX,DY,L2);" +
 						"}" +
 						"else {" +
-						"	.println(\"case 2\");" +
 						"	.term2string(ConflictTerm,Conflict);" +
-						"	.send(ConflictTerm,tell,replan(555555555555555));" +
+						"	.send(ConflictTerm,tell,replan_path(555555555555555));" +
+						"	.println(\"sent path replan message to \",Conflict);" +
 						"}" +
-						".println(\"norm applied\").",
+						".println(\"plan now consistent with norm "+normID+"\").",
 				"facilitator"
 				);
 		normID++;
@@ -122,7 +126,7 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION
-	void dropOldPlan(Object[] path) {
+	void drop_plan_path(Object[] path) {
 		for (int i=0; i<path.length; i++) {
 			String pos = (String)path[i];
 			String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");

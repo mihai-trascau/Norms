@@ -1,5 +1,5 @@
-goTo("agent1",2,6).
-goTo("agent2",2,7).
+//go_to("agent1",2,6).
+//go_to("agent2",2,7).
 
 !start.
 
@@ -25,12 +25,12 @@ goTo("agent2",2,7).
 		.add_plan(Expiration,Source);
 	}
 	.add_plan(Content, Source);
-	.println("added norm ",NormID).	
+	.println("added norm ",NormID," to norm base").	
 	
 +!work: true <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
-	?goTo(MyName,X,Y);
+	?go_to(MyName,X,Y);
 	planPath(MyName,X,Y);
 	!check_all_norms.
 	
@@ -39,10 +39,10 @@ goTo("agent2",2,7).
 	for (.member(NormID,L)) {
 		!check_norm(NormID);
 	}
-	.println("checked all").	
+	.println("consistent with all norms").	
 		
 +!check_norm(NormID) : true <-
-	.println("check norm ",NormID);
+	.println("check consistency with norm ",NormID);
 	!norm_activation(NormID,Conflicts);
 	!norm_content(NormID,Conflicts).
 	

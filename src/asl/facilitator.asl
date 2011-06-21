@@ -5,6 +5,6 @@
 
 +!setupMap(MAP_ID): true
 <-	makeArtifact("map","cartagoEnvironment.MapArtifact",[],MAP_ID);
-	println("Map initialised");
+	println("map initialised");
 	initNorms.
 	

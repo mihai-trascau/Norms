@@ -15,12 +15,14 @@ public class Map
 	private int width;
 	
 	private Vector<Position> initialPositions;
+	private Vector<Position> finalPositions;
 	
 	public Map(File mapFile) {
 		map = null;
         height = 0;
         width = 0;
         initialPositions = new Vector<Position>();
+        finalPositions = new Vector<Position>();
         this.mapFile = mapFile;
 	}
 	
@@ -32,6 +34,7 @@ public class Map
 			for (int j=0; j<width; j++)
 				map[i][j] = m.map[i][j];
 		initialPositions = new Vector<Position>();
+		finalPositions = new Vector<Position>();
 	}
 	
 	public boolean isValid(Position p)
@@ -73,6 +76,13 @@ public class Map
 				else
 					throw new IOException();
 				initialPositions.add(new Position(x,y));
+				
+				x = scanner.nextInt();
+				if(scanner.hasNextInt())
+					y = scanner.nextInt();
+				else
+					throw new IOException();
+				finalPositions.add(new Position(x,y));
 			}
 			
 		} catch (FileNotFoundException e) {
@@ -123,5 +133,13 @@ public class Map
 			initialPositions.remove(index);
 		}
 		return initP;
+	}
+	
+	public Vector<Position> getInitialPositions() {
+		return initialPositions;
+	}
+	
+	public Vector<Position> getFinalPositions() {
+		return finalPositions;
 	}
 }
