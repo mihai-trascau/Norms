@@ -11,34 +11,52 @@ import env.Position;
 public class MapArtifactBase extends Artifact {
 	
 	private Map map;
-	private Hashtable<String,Position> agentPosition;
 	private int registeredAgents;
-	private Vector<Integer> actionInThisRound;
+	private Hashtable<String,Position> agentPosition;
+	private Hashtable<String,Boolean> actionInThisRound;
 	private int tick;
 	private String currentNormChecker;
 	
 	void init() {
-		map = new Map(new File("res/map.in"));
+		map = new Map(new File("res/map3.in"));
 		agentPosition = new Hashtable<String,Position>();
 		registeredAgents = 0;
 		
 		map.readMap();
 		map.printMap();
 		
-		actionInThisRound = new Vector<Integer>();
-		tick = 1;
+		Vector<Position> packets = map.getPackets();
+		if (packets != null)
+			for (Position p: packets)
+				defineObsProperty("packet", p.getX(), p.getY());
+		Vector<Position> trucks = map.getTrucks();
+		if (trucks != null)
+			for (Position p: trucks)
+				defineObsProperty("truck", p.getX(), p.getY());
+		
+		actionInThisRound = new Hashtable<String,Boolean>();
+		tick = 0;
 	}	
 	
 	@OPERATION
 	void register(String name) {
 		//Position initPos = map.getInitialPosition();
+		//Position finalPos = map.getFinalPositions().get(registeredAgents);
+		
 		Position initPos = map.getInitialPositions().get(registeredAgents);
-		Position finalPos = map.getFinalPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
+		actionInThisRound.put(name,false);
 		registeredAgents++;
-		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
-		defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
-		actionInThisRound.add(0);
+		
+		//defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
+		//defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
+	}
+	
+	@OPERATION
+	void get_initial_position(String name, OpFeedbackParam<Integer> x, OpFeedbackParam<Integer> y) {
+		Position pos = agentPosition.get(name);
+		x.set(pos.getX());
+		y.set(pos.getY());
 	}
 	
 	//adjacency list of a cell
@@ -90,9 +108,7 @@ public class MapArtifactBase extends Artifact {
 							path.add(0, p);
 							p = parents.get(p);
 						} while (!p.equals(source));
-						path.add(0, p);
-						//for (int i=0; i<path.size(); i++)
-						//	path.get(i).setTime(i);
+						//path.add(0, p);
 						return path;
 					}
 				}
@@ -101,22 +117,54 @@ public class MapArtifactBase extends Artifact {
 		return null;
 	}
 	
-	@OPERATION
+	@OPERATION (guard="synchronize")
 	void plan_path(String name, int x, int y, Object[] path) {
-		System.out.println("planing "+name);
+		System.out.println("("+name+") "+"planing "+name);
 		Map myMap = new Map(map);
 		for (int i=0; i<path.length; i++) {
 			Position pos = new Position((String)path[i]);
 			if (pos.getTime() > -myMap.getPosition(pos.getX(), pos.getY()))
 				myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
 		}
-		myMap.printMap();
-		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), myMap);
-		if(pathVector != null)
-			for (Position pos: pathVector)
-				defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
-		else
-			defineObsProperty("idle", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick);
+		
+		Position packet = new Position(x,y);
+		Vector<Position> neighbours = getNeighbours(packet, myMap);
+		
+		if (neighbours != null) {
+			Vector<Position> pathVector = findPath(agentPosition.get(name), neighbours.get(0), myMap);
+			if(pathVector != null) {
+				for (Position pos: pathVector)
+					defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
+				removeObsPropertyByTemplate("packet", x, y);
+				actionInThisRound.put(name,true);
+				return;
+			}
+		}
+		System.out.println("plan_path: path not found!");
+		defineObsProperty("idle", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick);
+		actionInThisRound.put(name,true);
+	}
+	
+	@OPERATION (guard="synchronize")
+	void move(String name, int x, int y, Object[] path) {
+		for (int i=0; i<path.length; i++) {
+			Position pos = new Position((String)path[i]);
+			if (pos.getTime() == tick) {
+				agentPosition.put(name, pos);
+				removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
+				actionInThisRound.put(name,true);
+				return;
+			}
+		}
+		System.out.println("move: next pos ilegal!");
+		actionInThisRound.put(name,true);
+	}
+	
+	@OPERATION
+	void update_pos(String name, OpFeedbackParam<Integer> x, OpFeedbackParam<Integer> y) {
+		Position pos = agentPosition.get(name);
+		x.set(pos.getX());
+		y.set(pos.getY());
 	}
 	
 	@OPERATION (guard="syncBeginNormCheck")
@@ -142,6 +190,18 @@ public class MapArtifactBase extends Artifact {
 			currentNormChecker = null;
 			return true;
 		}
+		return false;
+	}
+	
+	@GUARD
+	boolean synchronize(String name, int x, int y, Object[] path) {
+		if (!actionInThisRound.contains(false)) {
+			for (String str: actionInThisRound.keySet())
+				actionInThisRound.put(str, false);
+			tick++;
+		}
+		if (actionInThisRound.get(name) == false)
+			return true;
 		return false;
 	}
 }
