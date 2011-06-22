@@ -21,7 +21,7 @@ public class GUI extends JFrame implements Runnable {
 	public GUI(Map map) {
 		super("Factory transport robots");
 		
-		this.setSize(1000, 1000);
+		this.setSize(1100, 770);
 		//Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		//this.setBounds(0,0,screenSize.width, screenSize.height);
 		//this.setUndecorated(true);

@@ -24,7 +24,8 @@
 	!load_packet;
 	!select_truck;
 	!go_to_truck;
-	!unload_packet.
+	!unload_packet;
+	!work.
 	
 +!select_packet: idle <-
 	.my_name(MyNameTerm);
@@ -34,10 +35,18 @@
 	.println("packet: ",PX," ",PY);
 	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),Path);
 	plan_path(MyName,PX,PY,Path);
-	+my_packet(PX,PY);
-	-idle;
-	+moving;
-	check_norm_end(MyName).
+	check_norm_end(MyName);
+	?current_pos(CX,CY);
+	.findall(T,pos(MyName,CX,CY,T),L);
+	if (L == []) {
+		+my_packet(PX,PY);
+		-idle;
+		+moving;
+	}
+	else {
+		.println("IDLE");
+		!select_packet;
+	}.
 
 +!go_to_packet: moving <-
 	.my_name(MyNameTerm);
@@ -46,7 +55,7 @@
 	if (Path \== []) {
 		?current_pos(CX,CY);
 		.println("current ",CX," ",CY);
-		move(MyName,CX,CY,Path);
+		move_to_packet(MyName,CX,CY,Path);
 		-current_pos(CX,CY);
 		update_pos(MyName,NX,NY);
 		+current_pos(NX,NY);
@@ -57,15 +66,59 @@
 		+loading;
 	}.
 
-//+!load_packet: loading <-
-//	?my_packet(PX,PY);
-	
++!load_packet: loading <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?my_packet(PX,PY);
+	load_packet(MyName,PX,PY,[]);
+	-my_packet(PX,PY);
+	-loading;
+	+planning.
 
-+!work2: true <-
++!select_truck: planning <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
-	?go_to(MyName,DX,DY);
-	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),L);
-	plan_path(MyName,DX,DY,L);
-	check_norm_end(MyName).
+	?truck(TX,TY);
+	.println("truck: ",TX," ",TY);
+	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),Path);
+	plan_path(MyName,TX,TY,Path);
+	check_norm_end(MyName);
+	?current_pos(CX,CY);
+	.findall(T,pos(MyName,CX,CY,T),L);
+	if (L == []) {
+		+my_truck(TX,TY);
+		-planning;
+		+carrying;
+	}
+	else {
+		!select_truck;
+	}.
+	
+
++!go_to_truck: carrying <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),Path);
+	if (Path \== []) {
+		?current_pos(CX,CY);
+		.println("current ",CX," ",CY);
+		move_to_truck(MyName,CX,CY,Path);
+		-current_pos(CX,CY);
+		update_pos(MyName,NX,NY);
+		+current_pos(NX,NY);
+		!go_to_truck;
+	}
+	else {
+		-carrying;
+		+unloading;
+	}.
+
++!unload_packet: unloading <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?my_truck(TX,TY);
+	unload_packet(MyName,TX,TY,[]);
+	-my_truck(TX,TY);
+	-unloading;
+	+idle.
