@@ -88,12 +88,12 @@ public class Map
 					throw new IOException();
 				initialPositions.add(new Position(x,y));
 				
-				x = scanner.nextInt();
+				/*x = scanner.nextInt();
 				if(scanner.hasNextInt())
 					y = scanner.nextInt();
 				else
 					throw new IOException();
-				finalPositions.add(new Position(x,y));
+				finalPositions.add(new Position(x,y));*/
 			}
 			
 		} catch (FileNotFoundException e) {

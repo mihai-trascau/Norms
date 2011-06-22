@@ -52,7 +52,8 @@
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),Path);
-	if (Path \== []) {
+	.length(Path,Len);
+	if (Len > 2) {
 		?current_pos(CX,CY);
 		.println("current ",CX," ",CY);
 		move_to_packet(MyName,CX,CY,Path);
@@ -100,7 +101,8 @@
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),Path);
-	if (Path \== []) {
+	.length(Path,Len);
+	if (Len > 2) {
 		?current_pos(CX,CY);
 		.println("current ",CX," ",CY);
 		move_to_truck(MyName,CX,CY,Path);

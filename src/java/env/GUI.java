@@ -115,7 +115,10 @@ public class GUI extends JFrame implements Runnable {
 				case CARRYING:
 					labelMap[i][j].setIcon(getScaledIcon("res/img/loaded_robot.png", 0.15));
 					break;
-				case IDLE:
+				case IDLE_LOADING:
+					labelMap[i][j].setIcon(getScaledIcon("res/img/idle_robot.png", 0.15));
+					break;
+				case IDLE_UNLOADING:
 					labelMap[i][j].setIcon(getScaledIcon("res/img/idle_robot.png", 0.15));
 					break;
 				case LOADING:
@@ -128,7 +131,7 @@ public class GUI extends JFrame implements Runnable {
 					labelMap[i][j].setIcon(getScaledIcon("res/img/empty_robot.png", 0.15));
 					break;
 				case PLANNING:
-					labelMap[i][j].setIcon(getScaledIcon("res/img/empty_robot.png", 0.15));
+					labelMap[i][j].setIcon(getScaledIcon("res/img/planning_robot.png", 0.15));
 				}
 			}
 		}

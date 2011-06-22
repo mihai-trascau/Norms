@@ -51,9 +51,10 @@ public class MapArtifactBase extends Artifact {
 		
 		Position initPos = map.getInitialPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
-		agentState.put(name, AgentState.IDLE);
+		agentState.put(name, AgentState.IDLE_LOADING);
 		actionInThisRound.put(name,false);
 		registeredAgents++;
+		defineObsProperty("pos", name, initPos.getX(), initPos.getY(), tick);
 		
 		gui.drawMap(agentPosition,agentState);
 		
@@ -112,6 +113,8 @@ public class MapArtifactBase extends Artifact {
 					parents.put(next, current);
 					//destination reached
 					if (next.equals(destination)) {
+						path.add(new Position(next.getX(), next.getY(), next.getTime()+1));
+						path.add(new Position(next.getX(), next.getY(), next.getTime()+2));
 						Position p = next;
 						do {
 							path.add(0, p);
@@ -130,7 +133,8 @@ public class MapArtifactBase extends Artifact {
 	void plan_path(String name, int x, int y, Object[] path) {
 		System.out.println("("+name+") "+"planing");
 		Position currentPos = agentPosition.get(name);
-		//removeObsPropertyByTemplate("pos", name, currentPos.getX(), currentPos.getY(), tick);
+		System.out.println("pos "+name+" "+currentPos.getX()+" "+currentPos.getY()+" "+tick);
+		removeObsPropertyByTemplate("pos", name, currentPos.getX(), currentPos.getY(), tick);
 		Map myMap = new Map(map);
 		for (int i=0; i<path.length; i++) {
 			Position pos = new Position((String)path[i]);
@@ -146,9 +150,9 @@ public class MapArtifactBase extends Artifact {
 			if(pathVector != null) {
 				for (Position pos: pathVector)
 					defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
-				if (agentState.get(name) == AgentState.IDLE || agentState.get(name) == AgentState.UNLOADING)
+				if (agentState.get(name) == AgentState.IDLE_LOADING || agentState.get(name) == AgentState.UNLOADING)
 					removeObsPropertyByTemplate("packet", x, y);
-				else if (agentState.get(name) == AgentState.LOADING)
+				else if (agentState.get(name) == AgentState.IDLE_UNLOADING || agentState.get(name) == AgentState.LOADING)
 					removeObsPropertyByTemplate("truck", x, y);
 				agentState.put(name, AgentState.PLANNING);
 				actionInThisRound.put(name,true);
@@ -156,9 +160,12 @@ public class MapArtifactBase extends Artifact {
 				return;
 			}
 		}
-		System.out.println("plan_path: PATH NOT FOUND!");
+		System.out.println("("+name+") "+"plan_path: PATH NOT FOUND!");
 		defineObsProperty("pos", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick+1);
-		agentState.put(name, AgentState.IDLE);
+		if (agentState.get(name) == AgentState.IDLE_LOADING || agentState.get(name) == AgentState.UNLOADING)
+			agentState.put(name, AgentState.IDLE_LOADING);
+		else if (agentState.get(name) == AgentState.IDLE_UNLOADING || agentState.get(name) == AgentState.LOADING)
+			agentState.put(name, AgentState.IDLE_UNLOADING);
 		actionInThisRound.put(name,true);
 	}
 	
@@ -168,14 +175,13 @@ public class MapArtifactBase extends Artifact {
 			Position pos = new Position((String)path[i]);
 			if (pos.getTime() == tick) {
 				agentPosition.put(name, pos);
-				if (path.length > 1)
-					removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
+				removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
 				agentState.put(name, AgentState.MOVING);
 				actionInThisRound.put(name,true);
 				return;
 			}
 		}
-		System.out.println("move_to_packet: NEXT POS ILEGAL!");
+		System.out.println("("+name+") "+"move_to_packet: NEXT POS ILEGAL!");
 		agentState.put(name, AgentState.MOVING);
 		actionInThisRound.put(name,true);
 	}
@@ -192,7 +198,7 @@ public class MapArtifactBase extends Artifact {
 				return;
 			}
 		}
-		System.out.println("move_to_truck: NEXT POS ILEGAL!");
+		System.out.println("("+name+") "+"move_to_truck: NEXT POS ILEGAL!");
 		agentState.put(name, AgentState.CARRYING);
 		actionInThisRound.put(name,true);
 	}
@@ -207,6 +213,8 @@ public class MapArtifactBase extends Artifact {
 	@OPERATION (guard="synchronize")
 	void load_packet(String name, int x, int y, Object[] path) {
 		System.out.println("("+name+") "+"loading "+x+" "+y);
+		Position currentPos = agentPosition.get(name);
+		removeObsPropertyByTemplate("pos", name, currentPos.getX(), currentPos.getY(), tick);
 		map.setPosition(x, y, 1);
 		agentState.put(name, AgentState.LOADING);
 		actionInThisRound.put(name,true);
@@ -215,6 +223,8 @@ public class MapArtifactBase extends Artifact {
 	@OPERATION (guard="synchronize")
 	void unload_packet(String name, int x, int y, Object[] path) {
 		System.out.println("("+name+") "+"unloading "+x+" "+y);
+		Position currentPos = agentPosition.get(name);
+		removeObsPropertyByTemplate("pos", name, currentPos.getX(), currentPos.getY(), tick);
 		map.setPosition(x, y, 4);
 		agentState.put(name, AgentState.UNLOADING);
 		actionInThisRound.put(name,true);
@@ -251,11 +261,11 @@ public class MapArtifactBase extends Artifact {
 		if (!actionInThisRound.contains(false)) {
 			for (String str: actionInThisRound.keySet())
 				actionInThisRound.put(str, false);
-			try {
+			/*try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}
+			}*/
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 		}
