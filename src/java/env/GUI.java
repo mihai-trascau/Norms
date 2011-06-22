@@ -9,6 +9,8 @@ import java.util.Hashtable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
+import cartagoEnvironment.*;
+
 @SuppressWarnings("serial")
 public class GUI extends JFrame {
 	
@@ -30,7 +32,7 @@ public class GUI extends JFrame {
 		this.mapPanel = new JPanel(new GridLayout(map.getHeigth(), map.getWidth()));
 		this.labelMap = new JLabel[map.getHeigth()][map.getWidth()];
 		
-		this.drawMap(null);
+		this.drawMap(null,null);
 		
 		this.getContentPane().add(mapPanel);
 		this.setVisible(true);

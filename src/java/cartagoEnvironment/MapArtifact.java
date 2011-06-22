@@ -50,7 +50,7 @@ public class MapArtifact extends Artifact {
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
 		defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
 		
-		gui.drawMap(agentPosition);
+		gui.drawMap(agentPosition,null);
 		
 		actionInThisRound.add(0);
 	}
