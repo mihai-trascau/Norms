@@ -46,7 +46,7 @@ public class Map
 	public boolean isValid(Position p)
 	{
 		if (p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width)
-			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() < map[p.getX()][p.getY()])
+			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() != map[p.getX()][p.getY()])
 				return true;
 		return false;
 	}
