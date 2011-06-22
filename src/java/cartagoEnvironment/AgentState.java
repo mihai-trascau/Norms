@@ -5,6 +5,6 @@ public enum AgentState {
 	LOADING,
 	UNLOADING,
 	CARRYING,
-	IDLE,
-	EMPTY
+	MOVING,
+	IDLE
 }

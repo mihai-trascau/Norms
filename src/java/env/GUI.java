@@ -89,9 +89,10 @@ public class GUI extends JFrame {
 			for(int j = 0; j < map.getWidth(); j++)
 				this.mapPanel.add(labelMap[i][j]);
 		
-		this.setVisible(false);
-		this.setVisible(true);
+		//this.setVisible(false);
+		//this.setVisible(true);
 		//this.repaint();
+		this.getContentPane().paint(this.getGraphics());
 	}
 	
 	private ImageIcon getScaledIcon(String path, double scaleFactor) {

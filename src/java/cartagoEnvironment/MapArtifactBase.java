@@ -146,12 +146,14 @@ public class MapArtifactBase extends Artifact {
 					defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
 				removeObsPropertyByTemplate("packet", x, y);
 				actionInThisRound.put(name,true);
+				agentState.put(name, AgentState.PLANNING);
 				return;
 			}
 		}
 		System.out.println("plan_path: path not found!");
 		defineObsProperty("idle", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick);
 		actionInThisRound.put(name,true);
+		agentState.put(name, AgentState.IDLE);
 	}
 	
 	@OPERATION (guard="synchronize")
@@ -162,10 +164,12 @@ public class MapArtifactBase extends Artifact {
 				agentPosition.put(name, pos);
 				removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
 				actionInThisRound.put(name,true);
+				agentState.put(name, AgentState.MOVING);
 				return;
 			}
 		}
 		System.out.println("move: next pos ilegal!");
+		agentState.put(name, AgentState.MOVING);
 		actionInThisRound.put(name,true);
 	}
 	
@@ -207,6 +211,7 @@ public class MapArtifactBase extends Artifact {
 		if (!actionInThisRound.contains(false)) {
 			for (String str: actionInThisRound.keySet())
 				actionInThisRound.put(str, false);
+			gui.drawMap(agentPosition, agentState);
 			tick++;
 		}
 		if (actionInThisRound.get(name) == false)

@@ -7,7 +7,7 @@
 	get_initial_position(MyNameTerm,X,Y);
 	+current_pos(X,Y);
 	focus(MapID);
-	+free;
+	+idle;
 	.wait(500);
 	!work.
 	
@@ -26,7 +26,7 @@
 	!go_to_truck;
 	!unload_packet.
 	
-+!select_packet: free <-
++!select_packet: idle <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
@@ -35,7 +35,7 @@
 	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),Path);
 	plan_path(MyName,PX,PY,Path);
 	+my_packet(PX,PY);
-	-free;
+	-idle;
 	+moving;
 	check_norm_end(MyName).
 
@@ -57,8 +57,8 @@
 		+loading;
 	}.
 
-+!load_packet: loading <-
-	?my_packet(PX,PY);
+//+!load_packet: loading <-
+//	?my_packet(PX,PY);
 	
 
 +!work2: true <-
