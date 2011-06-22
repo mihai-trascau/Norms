@@ -1,12 +1,14 @@
 package cartagoEnvironment;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import cartago.*;
 
 import env.Map;
 import env.Position;
+import env.GUI;
 
 public class MapArtifact extends Artifact {
 	
@@ -16,14 +18,17 @@ public class MapArtifact extends Artifact {
 	private Vector<Integer> actionInThisRound;
 	private int tick;
 	private String currentNormChecker;
+	private GUI gui;
 	
-	void init() {
-		map = new Map(new File("res/map.in"));
+	void init() throws IOException {
+		map = new Map(new File("res/testmap.in"));
 		agentPosition = new Hashtable<String,Position>();
 		registeredAgents = 0;
 		
 		map.readMap();
 		map.printMap();
+		
+		gui = new GUI(map);
 		
 		actionInThisRound = new Vector<Integer>();
 		tick = 1;
@@ -44,6 +49,8 @@ public class MapArtifact extends Artifact {
 		registeredAgents++;
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
 		defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
+		gui.drawMap(agentPosition);
+		
 		actionInThisRound.add(0);
 	}
 	

@@ -146,4 +146,12 @@ public class Map
 	public Vector<Position> getFinalPositions() {
 		return finalPositions;
 	}
+	
+	public int getHeigth() {
+		return height;
+	}
+	
+	public int getWidth() {
+		return width;
+	}
 }
