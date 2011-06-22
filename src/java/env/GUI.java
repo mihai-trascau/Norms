@@ -86,6 +86,13 @@ public class GUI extends JFrame implements Runnable {
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
 					labelMap[i][j].setBackground(Color.CYAN);
+					//labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
+				}
+				else if(map.getPosition(i, j) == 4) {
+					if(agentPosition == null)
+						labelMap[i][j] = new JLabel();
+					labelMap[i][j].setOpaque(true);
+					labelMap[i][j].setBackground(Color.CYAN);
 					labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
 				}
 				
