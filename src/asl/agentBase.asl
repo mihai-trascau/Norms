@@ -47,7 +47,7 @@
 		?current_pos(CX,CY);
 		.println("current ",CX," ",CY);
 		move(MyName,CX,CY,Path);
-		-currentPos(CX,CY);
+		-current_pos(CX,CY);
 		update_pos(MyName,NX,NY);
 		+current_pos(NX,NY);
 		!go_to_packet;
@@ -57,9 +57,9 @@
 		+loading;
 	}.
 
-//+!load_packet: loading <-
-//	?my_packet()
-//	remove_packet()
++!load_packet: loading <-
+	?my_packet(PX,PY);
+	
 
 +!work2: true <-
 	.my_name(MyNameTerm);

@@ -7,23 +7,29 @@ import cartago.*;
 
 import env.Map;
 import env.Position;
+import env.GUI;
 
 public class MapArtifactBase extends Artifact {
 	
 	private Map map;
 	private int registeredAgents;
 	private Hashtable<String,Position> agentPosition;
+	private Hashtable<String,AgentState> agentState;
 	private Hashtable<String,Boolean> actionInThisRound;
 	private int tick;
 	private String currentNormChecker;
+	private GUI gui;
 	
 	void init() {
 		map = new Map(new File("res/map3.in"));
 		agentPosition = new Hashtable<String,Position>();
+		agentState = new Hashtable<String, AgentState>();
 		registeredAgents = 0;
 		
 		map.readMap();
 		map.printMap();
+		
+		gui = new GUI(map);
 		
 		Vector<Position> packets = map.getPackets();
 		if (packets != null)
@@ -45,8 +51,11 @@ public class MapArtifactBase extends Artifact {
 		
 		Position initPos = map.getInitialPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
+		agentState.put(name, AgentState.IDLE);
 		actionInThisRound.put(name,false);
 		registeredAgents++;
+		
+		gui.drawMap(agentPosition,agentState);
 		
 		//defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
 		//defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
@@ -127,7 +136,7 @@ public class MapArtifactBase extends Artifact {
 				myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
 		}
 		
-		Position packet = new Position(x,y);
+		Position packet = new Position(x,y,Integer.MAX_VALUE);
 		Vector<Position> neighbours = getNeighbours(packet, myMap);
 		
 		if (neighbours != null) {
