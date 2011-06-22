@@ -4,6 +4,8 @@
 	?get_map(MapID);
 	.my_name(MyNameTerm);
 	register(MyNameTerm);
+	get_initial_position(MyNameTerm,X,Y);
+	+current_pos(X,Y);
 	focus(MapID);
 	+free;
 	.wait(500);
@@ -42,12 +44,12 @@
 	.term2string(MyNameTerm,MyName);
 	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),Path);
 	if (Path \== []) {
-		?current_pos(MyName,CX,CY);
+		?current_pos(CX,CY);
 		.println("current ",CX," ",CY);
 		move(MyName,CX,CY,Path);
-		-currentPos(MyName,CX,CY);
+		-currentPos(CX,CY);
 		update_pos(MyName,NX,NY);
-		+current_pos(MyName,NX,NY);
+		+current_pos(NX,NY);
 		!go_to_packet;
 	}
 	else {

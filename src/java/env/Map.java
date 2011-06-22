@@ -16,6 +16,8 @@ public class Map
 	
 	private Vector<Position> initialPositions;
 	private Vector<Position> finalPositions;
+	private Vector<Position> packets;
+	private Vector<Position> trucks;
 	
 	public Map(File mapFile) {
 		map = null;
@@ -23,6 +25,8 @@ public class Map
         width = 0;
         initialPositions = new Vector<Position>();
         finalPositions = new Vector<Position>();
+        packets = new Vector<Position>();
+		trucks = new Vector<Position>();
         this.mapFile = mapFile;
 	}
 	
@@ -35,6 +39,8 @@ public class Map
 				map[i][j] = m.map[i][j];
 		initialPositions = new Vector<Position>();
 		finalPositions = new Vector<Position>();
+		packets = new Vector<Position>();
+		trucks = new Vector<Position>();
 	}
 	
 	public boolean isValid(Position p)
@@ -61,8 +67,13 @@ public class Map
 			for(int i = 0; i < height; i++)
 				for (int j = 0; j < width; j++)
 				{
-					if(scanner.hasNextInt())
+					if(scanner.hasNextInt()) {
 						map[i][j] = scanner.nextInt();
+						if (map[i][j] == 2)
+							packets.add(new Position(i,j));
+						if (map[i][j] == 3)
+							trucks.add(new Position(i,j));
+					}
 					else
 						throw new IOException();
 				}
@@ -153,5 +164,13 @@ public class Map
 	
 	public int getWidth() {
 		return width;
+	}
+
+	public Vector<Position> getPackets() {
+		return packets;
+	}
+
+	public Vector<Position> getTrucks() {
+		return trucks;
 	}
 }
