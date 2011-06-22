@@ -16,7 +16,7 @@ public class GUI extends JFrame {
 	private JLabel labelMap[][];
 	private JPanel mapPanel;
 	
-	public GUI(Map map) throws IOException {
+	public GUI(Map map) {
 		super("Factory transport robots");
 		
 		this.setSize(1000, 1000);
@@ -36,7 +36,7 @@ public class GUI extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public void drawMap(Hashtable<String,Position> agentPosition) {
+	public void drawMap(Hashtable<String,Position> agentPosition, Hashtable<String, AgentState> agentState) {
 		mapPanel.removeAll();
 		
 		for(int i = 0; i < map.getHeigth(); i++)
