@@ -32,8 +32,8 @@
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
 	?packet(PX,PY);
-	.println("packet: ",PX," ",PY);
-	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),Path);
+	.println("selected packet: ",PX," ",PY);
+	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T) & MyName \== Name,Path);
 	plan_path(MyName,PX,PY,Path);
 	check_norm_end(MyName);
 	?current_pos(CX,CY);
@@ -55,7 +55,7 @@
 	.length(Path,Len);
 	if (Len > 2) {
 		?current_pos(CX,CY);
-		.println("current ",CX," ",CY);
+		//.println("current ",CX," ",CY);
 		move_to_packet(MyName,CX,CY,Path);
 		-current_pos(CX,CY);
 		update_pos(MyName,NX,NY);
@@ -81,8 +81,8 @@
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
 	?truck(TX,TY);
-	.println("truck: ",TX," ",TY);
-	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T),Path);
+	.println("selected truck: ",TX," ",TY);
+	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T) & MyName \== Name,Path);
 	plan_path(MyName,TX,TY,Path);
 	check_norm_end(MyName);
 	?current_pos(CX,CY);
@@ -93,6 +93,7 @@
 		+carrying;
 	}
 	else {
+		.println("IDLE");
 		!select_truck;
 	}.
 	
@@ -104,7 +105,6 @@
 	.length(Path,Len);
 	if (Len > 2) {
 		?current_pos(CX,CY);
-		.println("current ",CX," ",CY);
 		move_to_truck(MyName,CX,CY,Path);
 		-current_pos(CX,CY);
 		update_pos(MyName,NX,NY);

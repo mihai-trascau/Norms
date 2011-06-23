@@ -44,11 +44,9 @@ public class MapArtifact extends Artifact {
 	void register(String name) {
 		//Position initPos = map.getInitialPosition();
 		Position initPos = map.getInitialPositions().get(registeredAgents);
-		Position finalPos = map.getFinalPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
 		registeredAgents++;
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
-		defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
 		
 		gui.drawMap(agentPosition,null);
 		

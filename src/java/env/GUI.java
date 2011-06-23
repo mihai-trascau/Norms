@@ -192,7 +192,5 @@ public class GUI extends JFrame implements Runnable {
 		return new ImageIcon(resizedImage);
 		}
 
-	public void run() {
-		
-	}
+	public void run() {}
 }

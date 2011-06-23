@@ -10,12 +10,11 @@ import java.util.Vector;
 public class Map
 {
 	File mapFile;
-	private int[][] map;
-	private int height;
-	private int width;
+	protected int[][] map;
+	protected int height;
+	protected int width;
 	
 	private Vector<Position> initialPositions;
-	private Vector<Position> finalPositions;
 	private Vector<Position> packets;
 	private Vector<Position> trucks;
 	
@@ -24,7 +23,6 @@ public class Map
         height = 0;
         width = 0;
         initialPositions = new Vector<Position>();
-        finalPositions = new Vector<Position>();
         packets = new Vector<Position>();
 		trucks = new Vector<Position>();
         this.mapFile = mapFile;
@@ -38,7 +36,6 @@ public class Map
 			for (int j=0; j<width; j++)
 				map[i][j] = m.map[i][j];
 		initialPositions = new Vector<Position>();
-		finalPositions = new Vector<Position>();
 		packets = new Vector<Position>();
 		trucks = new Vector<Position>();
 	}
@@ -46,7 +43,7 @@ public class Map
 	public boolean isValid(Position p)
 	{
 		if (p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width)
-			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() != map[p.getX()][p.getY()])
+			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() < map[p.getX()][p.getY()])
 				return true;
 		return false;
 	}
@@ -152,10 +149,6 @@ public class Map
 	
 	public Vector<Position> getInitialPositions() {
 		return initialPositions;
-	}
-	
-	public Vector<Position> getFinalPositions() {
-		return finalPositions;
 	}
 	
 	public int getHeigth() {

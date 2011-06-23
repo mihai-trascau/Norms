@@ -6,6 +6,7 @@ import java.util.*;
 import cartago.*;
 
 import env.Map;
+import env.PathMap;
 import env.Position;
 import env.GUI;
 
@@ -113,8 +114,12 @@ public class MapArtifactBase extends Artifact {
 					parents.put(next, current);
 					//destination reached
 					if (next.equals(destination)) {
-						path.add(new Position(next.getX(), next.getY(), next.getTime()+1));
-						path.add(new Position(next.getX(), next.getY(), next.getTime()+2));
+						Position load_unload = new Position(next.getX(), next.getY(), next.getTime()+1);
+						Position plan = new Position(next.getX(), next.getY(), next.getTime()+2);
+						if (!myMap.isValid(load_unload) || !myMap.isValid(plan))
+							return null;
+						path.add(load_unload);
+						path.add(plan);
 						Position p = next;
 						do {
 							path.add(0, p);
@@ -135,11 +140,12 @@ public class MapArtifactBase extends Artifact {
 		Position currentPos = agentPosition.get(name);
 		System.out.println("pos "+name+" "+currentPos.getX()+" "+currentPos.getY()+" "+tick);
 		removeObsPropertyByTemplate("pos", name, currentPos.getX(), currentPos.getY(), tick);
-		Map myMap = new Map(map);
+		
+		PathMap myMap = new PathMap(map);
 		for (int i=0; i<path.length; i++) {
 			Position pos = new Position((String)path[i]);
-			if (pos.getTime() > -myMap.getPosition(pos.getX(), pos.getY()))
-				myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
+			//if (pos.getTime() > -myMap.getPosition(pos.getX(), pos.getY()))
+			myMap.addPositionOccupiedAt(pos.getX(), pos.getY(), -pos.getTime());
 		}
 		
 		Position packet = new Position(x,y,Integer.MAX_VALUE);
@@ -156,7 +162,7 @@ public class MapArtifactBase extends Artifact {
 					removeObsPropertyByTemplate("truck", x, y);
 				agentState.put(name, AgentState.PLANNING);
 				actionInThisRound.put(name,true);
-				System.out.println(pathVector);
+				System.out.println("("+name+") "+pathVector);
 				return;
 			}
 		}
@@ -175,6 +181,7 @@ public class MapArtifactBase extends Artifact {
 			Position pos = new Position((String)path[i]);
 			if (pos.getTime() == tick) {
 				agentPosition.put(name, pos);
+				System.out.println("("+name+") current_pos: "+pos);
 				removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
 				agentState.put(name, AgentState.MOVING);
 				actionInThisRound.put(name,true);
@@ -192,6 +199,7 @@ public class MapArtifactBase extends Artifact {
 			Position pos = new Position((String)path[i]);
 			if (pos.getTime() == tick) {
 				agentPosition.put(name, pos);
+				System.out.println("("+name+") current_pos: "+pos);
 				removeObsPropertyByTemplate("pos", name, pos.getX(), pos.getY(), pos.getTime());
 				agentState.put(name, AgentState.CARRYING);
 				actionInThisRound.put(name,true);
@@ -231,10 +239,14 @@ public class MapArtifactBase extends Artifact {
 	}
 	
 	@OPERATION (guard="syncBeginNormCheck")
-	void check_norm_begin(String name) {}
+	void check_norm_begin(String name) {
+		System.out.println("(( "+name+" )) BEGIN at "+tick+":	"+actionInThisRound);
+	}
 	
 	@OPERATION (guard="syncEndNormCheck")
-	void check_norm_end(String name) {}
+	void check_norm_end(String name) {
+		System.out.println("(( "+name+" )) END at "+tick+":	"+actionInThisRound);
+	}
 	
 	@GUARD
 	boolean syncBeginNormCheck(String name) {
@@ -261,11 +273,11 @@ public class MapArtifactBase extends Artifact {
 		if (!actionInThisRound.contains(false)) {
 			for (String str: actionInThisRound.keySet())
 				actionInThisRound.put(str, false);
-			/*try {
+			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}*/
+			}
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 		}
