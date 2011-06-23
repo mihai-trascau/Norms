@@ -26,12 +26,41 @@
 	!go_to_truck;
 	!unload_packet;
 	!work.
+
++?choose_packet(X,Y): true <-
+	.findall(packet(PX,PY),packet(PX,PY),L);
+	.length(L,Len);
+	.random(N1);
+	N2 = N1*100;
+	N3 = N2 mod Len;
+	.nth(N3,L,packet(PX,PY));
+	X = PX;
+	Y = PY.
+
+-?choose_packet(X,Y): true <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?base(BX,BY);
+	set_done(MyName);
+	+done;
+	X = BX;
+	Y = BY.
+
++?choose_truck(X,Y): true <-
+	.findall(truck(PX,PY),truck(PX,PY),L);
+	.length(L,Len);
+	.random(N1);
+	N2 = N1*100;
+	N3 = N2 mod Len;
+	.nth(N3,L,truck(PX,PY));
+	X = PX;
+	Y = PY.
 	
 +!select_packet: idle <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
-	?packet(PX,PY);
+	?choose_packet(PX,PY);
 	.println("selected packet: ",PX," ",PY);
 	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T) & MyName \== Name,Path);
 	plan_path(MyName,PX,PY,Path);
@@ -63,8 +92,14 @@
 		!go_to_packet;
 	}
 	else {
-		-moving;
-		+loading;
+		.findall(done,done,D);
+		if (D == []) {
+			-moving;
+			+loading;
+		}
+		else {
+			!stay;
+		}
 	}.
 
 +!load_packet: loading <-
@@ -80,7 +115,7 @@
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	check_norm_begin(MyName);
-	?truck(TX,TY);
+	?choose_truck(TX,TY);
 	.println("selected truck: ",TX," ",TY);
 	.findall(pos(Name,X,Y,T),pos(Name,X,Y,T) & MyName \== Name,Path);
 	plan_path(MyName,TX,TY,Path);
@@ -124,3 +159,10 @@
 	-my_truck(TX,TY);
 	-unloading;
 	+idle.
+
++!stay: true <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	stay(MyName,0,0,[]);
+	!stay.
+	

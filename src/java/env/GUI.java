@@ -4,7 +4,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Random;
+import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,15 +21,28 @@ public class GUI extends JFrame implements Runnable {
 	private JLabel labelMap[][];
 	private JPanel mapPanel;
 	
+	private HashMap<String, Color> agentColor;
+	private Vector<Color> colorPool;
+	
 	public GUI(Map map) {
 		super("Factory transport robots");
 		
-		this.setSize(1100, 770);
+		this.setSize(1200, 770);
 		//Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		//this.setBounds(0,0,screenSize.width, screenSize.height);
 		//this.setUndecorated(true);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		
+		this.agentColor = new HashMap<String, Color>();
+		this.colorPool = new Vector<Color>();
+		colorPool.add(Color.RED);
+		colorPool.add(Color.BLUE);
+		colorPool.add(Color.CYAN);
+		colorPool.add(Color.GREEN);
+		colorPool.add(Color.MAGENTA);
+		colorPool.add(Color.ORANGE);
+		colorPool.add(Color.PINK);
+		colorPool.add(Color.YELLOW);
 		this.map = map;
 		
 		this.mapPanel = new JPanel(new GridLayout(map.getHeigth(), map.getWidth()));
@@ -107,7 +123,10 @@ public class GUI extends JFrame implements Runnable {
 			for(String agentName : agentPosition.keySet()){
 				int i = agentPosition.get(agentName).getX();
 				int j = agentPosition.get(agentName).getY();
-				labelMap[i][j].setForeground(Color.RED);
+				
+				if(!agentColor.containsKey(agentName))
+					agentColor.put(agentName, colorPool.size() > 0 ? colorPool.remove(0) : Color.BLACK);
+				labelMap[i][j].setForeground(agentColor.get(agentName));
 				labelMap[i][j].setText(agentName);
 				AgentState state = agentState.get(agentName);
 				switch(state)

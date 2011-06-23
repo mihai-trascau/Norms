@@ -41,6 +41,9 @@ public class MapArtifactBase extends Artifact {
 			for (Position p: trucks)
 				defineObsProperty("truck", p.getX(), p.getY());
 		
+		for (int i=0; i<map.getHeigth(); i++)
+			defineObsProperty("base", i, map.getWidth()-1);
+		
 		actionInThisRound = new Hashtable<String,Boolean>();
 		tick = 0;
 	}	
@@ -160,6 +163,8 @@ public class MapArtifactBase extends Artifact {
 					removeObsPropertyByTemplate("packet", x, y);
 				else if (agentState.get(name) == AgentState.IDLE_UNLOADING || agentState.get(name) == AgentState.LOADING)
 					removeObsPropertyByTemplate("truck", x, y);
+				else if (agentState.get(name) == AgentState.DONE)
+					removeObsPropertyByTemplate("base", x, y);
 				agentState.put(name, AgentState.PLANNING);
 				actionInThisRound.put(name,true);
 				System.out.println("("+name+") "+pathVector);
@@ -238,6 +243,16 @@ public class MapArtifactBase extends Artifact {
 		actionInThisRound.put(name,true);
 	}
 	
+	@OPERATION
+	void set_done(String name) {
+		agentState.put(name, AgentState.DONE);
+	}
+	
+	@OPERATION (guard="synchronize")
+	void stay(String name, int x, int y, Object[] path) {
+		actionInThisRound.put(name,true);
+	}
+	
 	@OPERATION (guard="syncBeginNormCheck")
 	void check_norm_begin(String name) {
 		System.out.println("(( "+name+" )) BEGIN at "+tick+":	"+actionInThisRound);
@@ -250,6 +265,8 @@ public class MapArtifactBase extends Artifact {
 	
 	@GUARD
 	boolean syncBeginNormCheck(String name) {
+		if (actionInThisRound.get(name) == true)
+			return false;
 		if (currentNormChecker == null)
 		{
 			currentNormChecker = name;
@@ -273,11 +290,11 @@ public class MapArtifactBase extends Artifact {
 		if (!actionInThisRound.contains(false)) {
 			for (String str: actionInThisRound.keySet())
 				actionInThisRound.put(str, false);
-			try {
+			/*try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}
+			}*/
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 		}

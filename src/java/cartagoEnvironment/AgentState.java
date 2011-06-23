@@ -7,5 +7,6 @@ public enum AgentState {
 	CARRYING,
 	MOVING,
 	IDLE_LOADING,
-	IDLE_UNLOADING
+	IDLE_UNLOADING,
+	DONE
 }
