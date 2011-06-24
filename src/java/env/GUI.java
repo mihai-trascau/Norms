@@ -115,8 +115,9 @@ public class GUI extends JFrame implements Runnable {
 				labelMap[i][j].setHorizontalAlignment(JLabel.CENTER);
 				labelMap[i][j].setVerticalTextPosition(JLabel.BOTTOM);
 				labelMap[i][j].setHorizontalTextPosition(JLabel.CENTER);
-				labelMap[i][j].validate();
-				labelMap[i][j].repaint();
+				//labelMap[i][j].validate();
+				//labelMap[i][j].repaint();
+				
 			}
 		
 		if(agentPosition != null) {
@@ -158,6 +159,8 @@ public class GUI extends JFrame implements Runnable {
 		mapPanel.validate();
 		mapPanel.repaint();
 		
+		//this.validate();
+		//this.repaint();
 		
 		/*
 		for(int i = 0; i < map.getHeigth(); i++)

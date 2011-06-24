@@ -1,8 +1,49 @@
-!start.
+!init.
 
-+?valid(pos(X,Y)):true <-
-	?map(X,Y,V);
-	V == 0.
+
++!init: true <-
+	?get_map(MapID);
+	.my_name(MyNameTerm);
+	focus(MapID);
+	register(MyNameTerm) [artifact_id(MapID)].
+
++tick(N) : true <-
+	-+step(N);
+	!start.
+
++!start: true <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?current_pos(MyName,SX,SY);
+	.println("Planning path from ",SX," ",SY);
+	?path(pos(9,0),Path);
+	+idle;
+	.println("Path: ",Path);
+	!select_packet.
+
++!select_packet : idle <-
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?current_pos(MyName,SX,SY);
+	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),PX,PY),packet(PX,PY),Packets);
+	.sort(Packets,SortedPackets);
+	for (.member(Packet,SortedPackets)) {
+		
+	}
+	.println("Selected packets: ",SortedPackets).
+	
+
+
+/* Find the MAP artifact */
+
++?get_map(MapID): true <-
+	lookupArtifact("map", MapID).
+
+-?get_map(MapID): true <-
+	.wait(10);
+	?get_map(MapID).
+
+/* PATHFIDING */
 
 +?neighbours(pos(X,Y),Res): true <-
 	+neighbours_list([]);
@@ -31,8 +72,10 @@
 	Res = L5.
 
 +?path(Dest,Path): true <-
-	?current_pos(SX,SY);
-	?tick(Tick);
+	.my_name(MyNameTerm);
+	.term2string(MyNameTerm,MyName);
+	?current_pos(MyName,SX,SY);
+	?step(Tick);
 	+queue(SX,SY,Tick);
 	+visited(SX,SY);
 	while (.findall(queue(X,Y,T),queue(X,Y,T),Queue) & .length(Queue,Len) & Len>0) {
@@ -66,21 +109,3 @@
 	.findall(path(X),path(X),L4);
 	for (.member(P,L4)) {-P;}
 	-current(_).
-	
-+!start: true <-
-	?get_map(MapID);
-	.my_name(MyNameTerm);
-	register(MyNameTerm) [artifact_id(MapID)];
-	focus(MapID);
-	+current_pos(3,17);
-	+tick(1);
-	?path(pos(9,6),Path);
-	.println(Path).
-	
-/* Find the MAP_ID */
-+?get_map(MapID): true <-
-	lookupArtifact("map", MapID).
-
--?get_map(MapID): true <-
-	.wait(10);
-	?get_map(MapID).

@@ -50,20 +50,13 @@ public class MapArtifactBase extends Artifact {
 	
 	@OPERATION
 	void register(String name) {
-		//Position initPos = map.getInitialPosition();
-		//Position finalPos = map.getFinalPositions().get(registeredAgents);
-		
 		Position initPos = map.getInitialPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
 		agentState.put(name, AgentState.IDLE_LOADING);
 		actionInThisRound.put(name,false);
 		registeredAgents++;
 		defineObsProperty("pos", name, initPos.getX(), initPos.getY(), tick);
-		
 		gui.drawMap(agentPosition,agentState);
-		
-		//defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
-		//defineObsProperty("go_to", name, finalPos.getX(), finalPos.getY());
 	}
 	
 	@OPERATION
@@ -290,11 +283,11 @@ public class MapArtifactBase extends Artifact {
 		if (!actionInThisRound.contains(false)) {
 			for (String str: actionInThisRound.keySet())
 				actionInThisRound.put(str, false);
-			/*try {
-				Thread.sleep(100);
+			try {
+				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}*/
+			}
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 		}

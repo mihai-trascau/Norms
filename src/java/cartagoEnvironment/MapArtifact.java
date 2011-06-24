@@ -13,66 +13,76 @@ import env.GUI;
 public class MapArtifact extends Artifact {
 	
 	private Map map;
-	private Hashtable<String,Position> agentPosition;
 	private int registeredAgents;
-	private Vector<Integer> actionInThisRound;
+	private Hashtable<String,Position> agentPosition;
+	private Hashtable<String,AgentState> agentState;
+	private Hashtable<String,Boolean> actionInThisRound;
 	private int tick;
 	private String currentNormChecker;
-	//private GUI gui;
+	private GUI gui;
 	
 	void init() throws IOException {
-		map = new Map(new File("res/map3.in"));
-		agentPosition = new Hashtable<String,Position>();
-		registeredAgents = 0;
 		
+		// Initialize map
+		map = new Map(new File("res/map3.in"));
 		map.readMap();
 		map.printMap();
 		
-		//gui = new GUI(map);
+		agentPosition = new Hashtable<String,Position>();
+		agentState = new Hashtable<String, AgentState>();
+		actionInThisRound = new Hashtable<String, Boolean>();
 		
-		actionInThisRound = new Vector<Integer>();
+		gui = new GUI(map);
+		
+		registeredAgents = 0;
 		tick = 1;
 		
 		System.out.println(map.getHeigth()+" "+map.getWidth());
 		for (int i=0; i<map.getHeigth(); i++)
 			for (int j=0; j<map.getWidth(); j++) 
 				defineObsProperty("map", i, j, map.getPosition(i, j));
+		
+		Vector<Position> packets = map.getPackets();
+		if (packets != null)
+			for (Position p: packets)
+				defineObsProperty("packet", p.getX(), p.getY());
+		Vector<Position> trucks = map.getTrucks();
+		if (trucks != null)
+			for (Position p: trucks)
+				defineObsProperty("truck", p.getX(), p.getY());
 	}	
 	
-	/**
-	 * Registers the agent on the map, giving it an ID number and creating a new observable
-	 * property stating the agent's current position.
-	 * @param agentID - Feedback parameter indicating the id received by the agent upon
-	 * registering on the map.
-	 */
 	@OPERATION
 	void register(String name) {
-		//Position initPos = map.getInitialPosition();
 		Position initPos = map.getInitialPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
 		registeredAgents++;
+		
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
+		signal(getOpUserId(),"tick",tick);
 		
-		//gui.drawMap(agentPosition,null);
-		
-		actionInThisRound.add(0);
+		agentState.put(name, AgentState.IDLE_LOADING);
+		actionInThisRound.put(name,false);
+		gui.drawMap(agentPosition,agentState);
 	}
 	
-	void registerAction(int agentID) {
-		actionInThisRound.set(agentID, 1);
+	void registerAction(String name) {
+		actionInThisRound.put(name, true);
 	}
+	
 	
 	@GUARD
-	boolean synchronize(int agentID, int dir) {
+	boolean synchronize(String agentName, int dir) {
 		if (!actionInThisRound.contains(0)) {
-			for (int i=0; i<actionInThisRound.size(); i++)
-				actionInThisRound.set(i, 0);
+			for(String name : actionInThisRound.keySet())
+				actionInThisRound.put(name, false);
 			tick++;
 		}
-		if (actionInThisRound.get(agentID) == 0)
+		if (actionInThisRound.get(agentName) == false)
 			return true;
 		return false;
 	}
+	
 	
 	@OPERATION
 	public void initNorms() {
