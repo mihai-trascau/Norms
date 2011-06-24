@@ -42,7 +42,7 @@ public class MapArtifactBase extends Artifact {
 				defineObsProperty("truck", p.getX(), p.getY());
 		
 		for (int i=0; i<map.getHeigth(); i++)
-			defineObsProperty("base", i, map.getWidth()-1);
+			defineObsProperty("base", i, map.getWidth());
 		
 		actionInThisRound = new Hashtable<String,Boolean>();
 		tick = 0;
