@@ -1,12 +1,35 @@
 !start.
 
-+?valid(pos(X,Y)):true <-
-	?map(X,Y,V);
-	V == 0.
++norm_string(Activation,Expiration,Content): true <-
+	.term2string(ActivationTerm,Activation);
+	.term2string(ExpirationTerm,Expiration);
+	.term2string(ContentTerm,Content);
+	+norm(ActivationTerm,ExpirationTerm,ContentTerm);
+	-norm_string(Activation,Expiration,Content).
+
++?valid_neighbours(pos(X,Y),Res): true <-
+	.findall(norm(A,E,C),norm(A,E,C),Norms);
+	?neighbours(pos(X,Y),Neighbours);
+	for (.member(N,Neighbours)) {
+		+N;
+		for (.member(norm(A,E,C),Norms)) {
+			if (C) {
+				+valid_neighbour(N);
+			}
+			else {
+				.println("CONFLICT ",N);
+			}
+		}
+		-N;
+	}
+	.findall(P,valid_neighbour(P),Res);
+	.findall(valid_neighbour(P),valid_neighbour(P),L);
+	for (.member(VN,L)) {-VN;}.
 
 +?neighbours(pos(X,Y),Res): true <-
 	+neighbours_list([]);
 	?neighbours_list(L1);
+	//?valid(pos(X-1,Y),V);
 	if (map(X-1,Y,V) & V==0) {
 		.concat(L1,[pos(X-1,Y)],LL1);
 		-+neighbours_list(LL1);
@@ -33,16 +56,18 @@
 +?path(Dest,Path): true <-
 	?current_pos(SX,SY);
 	?tick(Tick);
-	+queue(SX,SY,Tick);
+	+queue(0,SX,SY,Tick);
 	+visited(SX,SY);
-	while (.findall(queue(X,Y,T),queue(X,Y,T),Queue) & .length(Queue,Len) & Len>0) {
-		?queue(CX,CY,T);
-		-queue(CX,CY,T);
-		?neighbours(pos(CX,CY),Neighbours);
+	while (.findall(queue(I,X,Y,T),queue(I,X,Y,T),Queue) & .length(Queue,Len) & Len>0) {
+		.min(Queue,queue(I1,CX,CY,T));
+		-queue(I1,CX,CY,T);
+		?valid_neighbours(pos(CX,CY),Neighbours);
 		for (.member(pos(NX,NY),Neighbours)) {
 			if (not visited(NX,NY)) {
+				.findall(queue(I,X,Y,T),queue(I,X,Y,T),Queue2);
+				.max(Queue,queue(I2,_,_,_));
+				+queue(I2+1,NX,NY,T+1);
 				+visited(NX,NY);
-				+queue(NX,NY,T+1);
 				+parent(pos(NX,NY,T+1),pos(CX,CY,T));
 				if (pos(NX,NY)==Dest) {
 					P = pos(NX,NY,T+1);
@@ -57,7 +82,7 @@
 		}
 	}
 	.findall(path(X,Y,T),path(pos(X,Y,T)),Path);
-	.findall(queue(X,Y,T),queue(X,Y,T),L1);
+	.findall(queue(I,X,Y,T),queue(I,X,Y,T),L1);
 	for (.member(Q,L1)) {-Q;}
 	.findall(visited(X,Y),visited(X,Y),L2);
 	for (.member(V,L2)) {-V;}
@@ -75,7 +100,11 @@
 	+current_pos(3,17);
 	+tick(1);
 	?path(pos(9,6),Path);
-	.println(Path).
+	.length(Path,Len);
+	.println(Len," ",Path).
+	
+	
+	
 
 +!start2: true <-
 	?get_map(MapID);
