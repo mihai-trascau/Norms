@@ -8,6 +8,11 @@
 	+current_pos(X,Y);
 	focus(MapID);
 	+idle;
+	T = 4;
+	.term2string(R,"T>5");
+	.println(R);
+	.eval(E,R);
+	.println(E);
 	.wait(500);
 	!work.
 	

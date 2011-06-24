@@ -18,20 +18,25 @@ public class MapArtifact extends Artifact {
 	private Vector<Integer> actionInThisRound;
 	private int tick;
 	private String currentNormChecker;
-	private GUI gui;
+	//private GUI gui;
 	
 	void init() throws IOException {
-		map = new Map(new File("res/testmap.in"));
+		map = new Map(new File("res/map3.in"));
 		agentPosition = new Hashtable<String,Position>();
 		registeredAgents = 0;
 		
 		map.readMap();
 		map.printMap();
 		
-		gui = new GUI(map);
+		//gui = new GUI(map);
 		
 		actionInThisRound = new Vector<Integer>();
 		tick = 1;
+		
+		System.out.println(map.getHeigth()+" "+map.getWidth());
+		for (int i=0; i<map.getHeigth(); i++)
+			for (int j=0; j<map.getWidth(); j++) 
+				defineObsProperty("map", i, j, map.getPosition(i, j));
 	}	
 	
 	/**
@@ -48,7 +53,7 @@ public class MapArtifact extends Artifact {
 		registeredAgents++;
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
 		
-		gui.drawMap(agentPosition,null);
+		//gui.drawMap(agentPosition,null);
 		
 		actionInThisRound.add(0);
 	}
