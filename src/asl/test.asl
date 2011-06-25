@@ -1,3 +1,4 @@
+norm(t>0,t<100,not pack(packet(2,13))).
 !init.
 
 
@@ -27,14 +28,29 @@
 	?current_pos(MyName,SX,SY);
 	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),PX,PY),packet(PX,PY),Packets);
 	.sort(Packets,SortedPackets);
-	for (.member(Packet,SortedPackets)) {
-		
+	.println("Sorted packets: ",SortedPackets);
+	.findall(norm(A,E,C),norm(A,E,C),Norms);
+	for (.member(packet(D,X,Y),SortedPackets)) {
+		+pack(packet(X,Y));
+		for (.member(norm(A,E,C),Norms)) {
+			if (not C) {
+				+bad_packet;
+			}
+		}
+		if (not bad_packet) {
+			+selected_packet(packet(D,X,Y));
+		}
+		else {
+			-bad_packet;
+		}
+		-pack(packet(X,Y));
 	}
-	.println("Selected packets: ",SortedPackets).
-	
-
-
-/* Find the MAP artifact */
+	.findall(packet(D,X,Y),selected_packet(packet(D,X,Y)),L);
+	.min(L,SelectedPacket);
+	for (.member(P,L)) {
+		-selected_packet(P);
+	}
+	.println("Selected packet: ",SelectedPacket).
 
 +?get_map(MapID): true <-
 	lookupArtifact("map", MapID).
