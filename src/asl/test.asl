@@ -1,5 +1,6 @@
-norm(0, step(N) & N > 0, step(N) & N > 100, not select(packet(1,1,13))).
-norm(1, step(N) & N > 0, step(N) & N > 100, not select(packet(_,_,_))).
+step(0).
+norm(0, step(N) & N > 0, step(N) & N > 100, not select(packet(5,_,_))).
+
 
 !init.
 
@@ -10,29 +11,49 @@ norm(1, step(N) & N > 0, step(N) & N > 100, not select(packet(_,_,_))).
 	focus(MapID);
 	register(MyNameTerm) [artifact_id(MapID)].
 
++?get_map(MapID): true <-
+	lookupArtifact("map", MapID).
+
+-?get_map(MapID): true <-
+	.wait(10);
+	?get_map(MapID).
 
 
-+tick(N) : true <-
+
++tick(N): N == 1 <-
+	.println("Tick ",N);
 	-+step(N);
 	!start.
 
++tick(N) : N > 1 & packet_selection <-
+	.println("Tick ",N).
+
++tick(N) : N > 1 & moving <-
+	.println("Tick ",N).
+
++tick(N) : N > 1 & loading <-
+	.println("Tick ",N).
+
++tick(N) : N > 1 & truck_selection <-
+	.println("Tick ",N).
+
++tick(N) : N > 1 & carrying <-
+	.println("Tick ",N).
+
++tick(N) : N > 1 & unload <-
+	.println("Tick ",N).
 
 
 +!start: true <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
-	?current_pos(MyName,SX,SY);
-	.println("Planning path from ",SX," ",SY);
-	?path(pos(9,0),Path);
-	+idle;
-	.println("Path: ",Path);
+	+my_name(MyName);
+	+packet_selection;
 	!select_packet.
 
 
-
-+!select_packet : idle <-
-	.my_name(MyNameTerm);
-	.term2string(MyNameTerm,MyName);
++!select_packet : packet_selection <-
+	?my_name(MyName);
 	?current_pos(MyName,SX,SY);
 	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),Type,PX,PY),packet(Type,PX,PY),Packets);
 	if(Packets \== [])
@@ -67,12 +88,14 @@ norm(1, step(N) & N > 0, step(N) & N > 100, not select(packet(_,_,_))).
 			}
 			.println("Selected packet: ",T," ",X," ",Y);
 			-norms_infringed(_);
-			+my_packet(T,X,Y);
+			+my_packet(packet(T,X,Y));
+			register_packet(MyName,packet(T,X,Y));
 		}
 		else {
 			.println("No packet selected due to norms");
 			?norms_infringed(NormList);
 			.println("Infringed norm: ",NormList);
+			stay(MyName,SX,SY);
 		}
 	}
 	else {
@@ -81,14 +104,7 @@ norm(1, step(N) & N > 0, step(N) & N > 100, not select(packet(_,_,_))).
 
 
 
-+?get_map(MapID): true <-
-	lookupArtifact("map", MapID).
 
-
-
--?get_map(MapID): true <-
-	.wait(10);
-	?get_map(MapID).
 
 
 

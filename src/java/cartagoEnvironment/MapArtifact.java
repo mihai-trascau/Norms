@@ -59,6 +59,7 @@ public class MapArtifact extends Artifact {
 	
 	@OPERATION
 	void register(String name) {
+		System.out.println("CEVAAAA");
 		Position initPos = map.getInitialPositions().get(registeredAgents);
 		agentPosition.put(name, initPos);
 		registeredAgents++;
@@ -74,7 +75,19 @@ public class MapArtifact extends Artifact {
 	void registerAction(String name) {
 		actionInThisRound.put(name, true);
 	}
+
 	
+	@OPERATION
+	void stay(String name, int x, int y) {
+		if(getObsPropertyByTemplate("pos",x,y,tick) != null)
+			removeObsPropertyByTemplate("pos",x,y,tick);
+		defineObsProperty("pos",name,x,y,tick+1);
+	}
+
+	@OPERATION
+	void register_packet(String name, String packet) {
+		defineObsProperty("select",name,packet);
+	}
 	
 	@GUARD
 	boolean synchronize(String agentName, int dir) {
