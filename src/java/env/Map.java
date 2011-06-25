@@ -15,16 +15,16 @@ public class Map
 	protected int width;
 	
 	private Vector<Position> initialPositions;
-	private Vector<Position> packets;
-	private Vector<Position> trucks;
+	private Vector<Vector<Position>> packets;
+	private Vector<Vector<Position>> trucks;
 	
 	public Map(File mapFile) {
 		map = null;
         height = 0;
         width = 0;
         initialPositions = new Vector<Position>();
-        packets = new Vector<Position>();
-		trucks = new Vector<Position>();
+        packets = new Vector<Vector<Position>>();
+		trucks = new Vector<Vector<Position>>();
         this.mapFile = mapFile;
 	}
 	
@@ -36,8 +36,8 @@ public class Map
 			for (int j=0; j<width; j++)
 				map[i][j] = m.map[i][j];
 		initialPositions = new Vector<Position>();
-		packets = new Vector<Position>();
-		trucks = new Vector<Position>();
+		packets = new Vector<Vector<Position>>();
+		trucks = new Vector<Vector<Position>>();
 	}
 	
 	public boolean isValid(Position p)
@@ -66,10 +66,26 @@ public class Map
 				{
 					if(scanner.hasNextInt()) {
 						map[i][j] = scanner.nextInt();
-						if (map[i][j] == 2)
+						if (map[i][j] >= 30) {
+							int type = map[i][j] % 10;
+							if (trucks.size() < type) {
+								trucks.setSize(type);
+								trucks.set(type-1, new Vector<Position>());
+							}
+							trucks.get(type-1).add(new Position(i,j));
+						}
+						else if (map[i][j] >= 20) {
+							int type = map[i][j] % 10;
+							if (packets.size() < type) {
+								packets.setSize(type);
+								packets.set(type-1, new Vector<Position>());
+							}
+							packets.get(type-1).add(new Position(i,j));
+						}
+							/*if (map[i][j] == 2)
 							packets.add(new Position(i,j));
 						if (map[i][j] == 3)
-							trucks.add(new Position(i,j));
+							trucks.add(new Position(i,j));*/
 					}
 					else
 						throw new IOException();
@@ -159,11 +175,11 @@ public class Map
 		return width;
 	}
 
-	public Vector<Position> getPackets() {
+	public Vector<Vector<Position>> getPackets() {
 		return packets;
 	}
 
-	public Vector<Position> getTrucks() {
+	public Vector<Vector<Position>> getTrucks() {
 		return trucks;
 	}
 }

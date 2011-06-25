@@ -32,14 +32,27 @@ public class MapArtifactBase extends Artifact {
 		
 		gui = new GUI(map);
 		
-		Vector<Position> packets = map.getPackets();
+		/*Vector<Position> packets = map.getPackets();
 		if (packets != null)
 			for (Position p: packets)
 				defineObsProperty("packet", p.getX(), p.getY());
 		Vector<Position> trucks = map.getTrucks();
 		if (trucks != null)
 			for (Position p: trucks)
-				defineObsProperty("truck", p.getX(), p.getY());
+				defineObsProperty("truck", p.getX(), p.getY());*/
+		
+		Vector<Vector<Position>> packets = map.getPackets();
+		if (packets != null)
+			for (int i=0; i<packets.size(); i++)
+				if (packets.get(i) != null)
+					for (Position p: packets.get(i))
+						defineObsProperty("packet", p.getX(), p.getY());
+		Vector<Vector<Position>> trucks = map.getTrucks();
+		if (trucks != null)
+			for (int i=0; i<trucks.size(); i++)
+				if (trucks.get(i) != null)
+					for (Position p: trucks.get(i))
+						defineObsProperty("truck", p.getX(), p.getY());
 		
 		for (int i=0; i<map.getHeigth(); i++)
 			defineObsProperty("base", i, map.getWidth());

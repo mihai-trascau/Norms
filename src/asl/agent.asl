@@ -33,7 +33,6 @@ norm(T>0,T<100,not pos(9,8)).
 +?neighbours(pos(X,Y),Res): true <-
 	+neighbours_list([]);
 	?neighbours_list(L1);
-	//?valid(pos(X-1,Y),V);
 	if (map(X-1,Y,V) & V==0) {
 		.concat(L1,[pos(X-1,Y)],LL1);
 		-+neighbours_list(LL1);
@@ -107,17 +106,6 @@ norm(T>0,T<100,not pos(9,8)).
 	.length(Path,Len);
 	.println(Len," ",Path).
 	
-	
-	
-
-+!start2: true <-
-	?get_map(MapID);
-	.my_name(MyNameTerm);
-	register(MyNameTerm) [artifact_id(MapID)];
-	focus(MapID);
-	.wait(500);
-	!work.
-	
 /* Find the MAP_ID */
 +?get_map(MapID): true <-
 	lookupArtifact("map", MapID).
@@ -125,37 +113,4 @@ norm(T>0,T<100,not pos(9,8)).
 -?get_map(MapID): true <-
 	.wait(10);
 	?get_map(MapID).
-
-+push_norm(NormID, Activation, Expiration, Content, Source) : true <-
-	.add_plan(Activation, Source);
-	if (Expiration \== "") {
-		.add_plan(Expiration,Source);
-	}
-	.add_plan(Content, Source);
-	.println("added norm ",NormID," to norm base").	
-	
-+!work: true <-
-	.my_name(MyNameTerm);
-	.term2string(MyNameTerm,MyName);
-	?go_to(MyName,X,Y);
-	plan_path(MyName,X,Y);
-	!check_all_norms.
-	
-+!check_all_norms : true <-
-	?norm_id_list(L);
-	.my_name(MyNameTerm);
-	check_norm_begin(MyNameTerm);
-	for (.member(NormID,L)) {
-		!check_norm(NormID);
-	}
-	.println("consistent with all norms");
-	check_norm_end(MyNameTerm).
-		
-+!check_norm(NormID) : true <-
-	.println("check consistency with norm ",NormID);
-	!norm_activation(NormID,Conflicts);
-	!norm_content(NormID,Conflicts).
-	
--!check_norm(NormID) : true <-
-	.println("nu s-a activat norma ",NormID).
 	

@@ -32,24 +32,29 @@ public class MapArtifact extends Artifact {
 		agentState = new Hashtable<String, AgentState>();
 		actionInThisRound = new Hashtable<String, Boolean>();
 		
+		System.out.println(map.getHeigth()+" "+map.getWidth());
+		
 		gui = new GUI(map);
 		
 		registeredAgents = 0;
 		tick = 1;
 		
-		System.out.println(map.getHeigth()+" "+map.getWidth());
 		for (int i=0; i<map.getHeigth(); i++)
 			for (int j=0; j<map.getWidth(); j++) 
 				defineObsProperty("map", i, j, map.getPosition(i, j));
 		
-		Vector<Position> packets = map.getPackets();
+		Vector<Vector<Position>> packets = map.getPackets();
 		if (packets != null)
-			for (Position p: packets)
-				defineObsProperty("packet", p.getX(), p.getY());
-		Vector<Position> trucks = map.getTrucks();
+			for (int i=0; i<packets.size(); i++)
+				if (packets.get(i) != null)
+					for (Position p: packets.get(i))
+						defineObsProperty("packet", i+1, p.getX(), p.getY());
+		Vector<Vector<Position>> trucks = map.getTrucks();
 		if (trucks != null)
-			for (Position p: trucks)
-				defineObsProperty("truck", p.getX(), p.getY());
+			for (int i=0; i<trucks.size(); i++)
+				if (trucks.get(i) != null)
+					for (Position p: trucks.get(i))
+						defineObsProperty("truck", i+1, p.getX(), p.getY());
 	}	
 	
 	@OPERATION

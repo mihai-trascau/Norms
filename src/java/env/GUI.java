@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Random;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
@@ -90,14 +89,14 @@ public class GUI extends JFrame implements Runnable {
 					labelMap[i][j].setBackground(Color.GRAY);
 					labelMap[i][j].setForeground(Color.LIGHT_GRAY);
 				}
-				else if(map.getPosition(i, j) == 2) {
+				else if(map.getPosition(i, j) >= 20 && map.getPosition(i, j) < 30) {
 					if(agentPosition == null)
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
 					labelMap[i][j].setBackground(Color.GRAY);
 					labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
 				}
-				else if(map.getPosition(i, j) == 3) {
+				else if(map.getPosition(i, j) >= 30 && map.getPosition(i, j) < 40) {
 					if(agentPosition == null)
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
