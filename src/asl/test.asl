@@ -1,4 +1,6 @@
-norm(t>0,t<100,not pack(packet(2,13))).
+norm(0, step(N) & N > 0, step(N) & N > 100, not select(packet(1,1,13))).
+norm(1, step(N) & N > 0, step(N) & N > 100, not select(packet(_,_,_))).
+
 !init.
 
 
@@ -8,9 +10,13 @@ norm(t>0,t<100,not pack(packet(2,13))).
 	focus(MapID);
 	register(MyNameTerm) [artifact_id(MapID)].
 
+
+
 +tick(N) : true <-
 	-+step(N);
 	!start.
+
+
 
 +!start: true <-
 	.my_name(MyNameTerm);
@@ -22,45 +28,71 @@ norm(t>0,t<100,not pack(packet(2,13))).
 	.println("Path: ",Path);
 	!select_packet.
 
+
+
 +!select_packet : idle <-
 	.my_name(MyNameTerm);
 	.term2string(MyNameTerm,MyName);
 	?current_pos(MyName,SX,SY);
-	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),PX,PY),packet(PX,PY),Packets);
-	.sort(Packets,SortedPackets);
-	.println("Sorted packets: ",SortedPackets);
-	.findall(norm(A,E,C),norm(A,E,C),Norms);
-	for (.member(packet(D,X,Y),SortedPackets)) {
-		+pack(packet(X,Y));
-		for (.member(norm(A,E,C),Norms)) {
-			if (not C) {
-				+bad_packet;
+	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),Type,PX,PY),packet(Type,PX,PY),Packets);
+	if(Packets \== [])
+	{
+		.sort(Packets,SortedPackets);
+		.println("Sorted packets: ",SortedPackets);
+		.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
+		+norms_infringed([]);
+		for (.member(packet(D,T,X,Y),SortedPackets)) {
+			+select(packet(T,X,Y));
+			for (.member(norm(ID,A,E,C),Norms)) {
+					if (A & not E & not C) {
+						+bad_packet;
+						?norms_infringed(NormList);
+						.concat(NormList,[ID],InfNormList);
+						-+norms_infringed(InfNormList);
+					}
 			}
+			if (not bad_packet) {
+				+selected_packet(packet(D,T,X,Y));
+			}
+			else {
+				-bad_packet;
+			}
+			-select(packet(T,X,Y));
 		}
-		if (not bad_packet) {
-			+selected_packet(packet(D,X,Y));
+		.findall(packet(D,T,X,Y),selected_packet(packet(D,T,X,Y)),L);
+		if(L \== []) {
+			.min(L,packet(D,T,X,Y));
+			for (.member(P,L)) {
+				-selected_packet(P);
+			}
+			.println("Selected packet: ",T," ",X," ",Y);
+			-norms_infringed(_);
+			+my_packet(T,X,Y);
 		}
 		else {
-			-bad_packet;
+			.println("No packet selected due to norms");
+			?norms_infringed(NormList);
+			.println("Infringed norm: ",NormList);
 		}
-		-pack(packet(X,Y));
 	}
-	.findall(packet(D,X,Y),selected_packet(packet(D,X,Y)),L);
-	.min(L,SelectedPacket);
-	for (.member(P,L)) {
-		-selected_packet(P);
-	}
-	.println("Selected packet: ",SelectedPacket).
+	else {
+		.println("No packets remaining");
+	}.
+
+
 
 +?get_map(MapID): true <-
 	lookupArtifact("map", MapID).
+
+
 
 -?get_map(MapID): true <-
 	.wait(10);
 	?get_map(MapID).
 
-/* PATHFIDING */
 
+
+/* PATHFIDING */
 +?neighbours(pos(X,Y),Res): true <-
 	+neighbours_list([]);
 	?neighbours_list(L1);
@@ -86,6 +118,8 @@ norm(t>0,t<100,not pack(packet(2,13))).
 	?neighbours_list(L5);
 	-neighbours_list(L5);
 	Res = L5.
+
+
 
 +?path(Dest,Path): true <-
 	.my_name(MyNameTerm);
