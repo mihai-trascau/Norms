@@ -1,3 +1,4 @@
+norm(T>0,T<100,not pos(9,8)).
 !start.
 
 +norm_string(Activation,Expiration,Content): true <-
@@ -13,12 +14,15 @@
 	for (.member(N,Neighbours)) {
 		+N;
 		for (.member(norm(A,E,C),Norms)) {
-			if (C) {
-				+valid_neighbour(N);
+			if (not C) {
+				+bad_neighbour(N);
 			}
-			else {
-				.println("CONFLICT ",N);
-			}
+		}
+		if (not bad_neighbour(N)) {
+			+valid_neighbour(N);
+		}
+		else {
+			-bad_neighbour(N);
 		}
 		-N;
 	}
