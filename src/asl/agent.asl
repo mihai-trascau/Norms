@@ -1,5 +1,45 @@
-norm(T>0,T<100,not pos(9,8)).
-!start.
+//norm(true,false,not pos(9,8)).
+norm(1,my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,false,
+.findall(1,pos(MyName,_,_,_),P1) & .findall(pos(Name,X1,Y1,T1),pos(Name,X1,Y1,T1),P2) & .length(P1,N1) & .length(P2,N2) & 
+(N1 < N2 | (N1==N2 & MyName < Name))).
+
+pos(agent1,2,3,1).
+pos(agent1,2,4,2).
+pos(agent1,2,5,3).
+pos(agent1,2,6,4).
+
+pos(agent2,1,4,1).
+pos(agent2,2,4,2).
+pos(agent2,3,4,3).
+pos(agent2,3,5,4).
+
+my_name(agent2).
+
+!start2.
+
++!start2: true <-
+	?norm(ID,A,E,C);
+	if (A & not E & not C) {
+		.println("Incalca norma");
+	}
+	else {
+		.println("Satisface norma");
+	}.
+
++?check_norms: true <-
+	.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
+	for (.member(norm(ID,A,E,C),Norms)) {
+		if (A & not E & not C) {
+			+conflicting_norm;
+			?norms_infringed(NormList);
+			.concat(NormList,[ID],InfNormList);
+			-+norms_infringed(InfNormList);
+		}
+	}
+	if (conflicting_norm) {
+		-conflicting_norm;
+		.fail;
+	}.
 
 +norm_string(Activation,Expiration,Content): true <-
 	.term2string(ActivationTerm,Activation);
@@ -84,7 +124,7 @@ norm(T>0,T<100,not pos(9,8)).
 			}
 		}
 	}
-	.findall(path(X,Y,T),path(pos(X,Y,T)),Path);
+	.findall(pos(X,Y,T),path(pos(X,Y,T)),Path);
 	.findall(queue(I,X,Y,T),queue(I,X,Y,T),L1);
 	for (.member(Q,L1)) {-Q;}
 	.findall(visited(X,Y),visited(X,Y),L2);
@@ -94,6 +134,8 @@ norm(T>0,T<100,not pos(9,8)).
 	.findall(path(X),path(X),L4);
 	for (.member(P,L4)) {-P;}
 	-current(_).
+	
+
 	
 +!start: true <-
 	?get_map(MapID);
