@@ -1,7 +1,5 @@
 package env;
 
-import cartagoEnvironment.MapArtifact;
-
 public class Position
 {
 	private int x;
@@ -34,10 +32,9 @@ public class Position
 	
 	public Position(String pos) {
 		String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");
-		//String name = splitPos[0].replace("\"", "");
-		this.x = Integer.parseInt(splitPos[1]);
-		this.y = Integer.parseInt(splitPos[2]);
-		this.time = Integer.parseInt(splitPos[3]);
+		this.x = Integer.parseInt(splitPos[0]);
+		this.y = Integer.parseInt(splitPos[1]);
+		this.time = Integer.parseInt(splitPos[2]);
 	}
 	
 	public int getX() {

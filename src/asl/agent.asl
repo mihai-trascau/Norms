@@ -78,7 +78,6 @@ my_name("agent1").
 		-pos(PX,PY,T);
 	}
 	.findall(P,valid_neighbour(P),Res);
-	//.println(Res);
 	.findall(valid_neighbour(P),valid_neighbour(P),L);
 	for (.member(VN,L)) {-VN;}.
 

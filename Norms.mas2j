@@ -9,7 +9,7 @@ MAS helloworld {
 
 	agents:
 		facilitator facilitator agentArchClass c4jason.CAgentArch;
-		agent agent agentArchClass c4jason.CAgentArch #1;
+		agent test agentArchClass c4jason.CAgentArch #5;
 		//facilitatorBase facilitatorBase agentArchClass c4jason.CAgentArch;
 		//agentBase agentBase agentArchClass c4jason.CAgentArch #5;
 

@@ -89,34 +89,43 @@ public class GUI extends JFrame implements Runnable {
 					labelMap[i][j].setBackground(Color.GRAY);
 					labelMap[i][j].setForeground(Color.LIGHT_GRAY);
 				}
+				else if(map.getPosition(i, j) == 2) {
+					if(agentPosition == null)
+						labelMap[i][j] = new JLabel();
+					else {
+						labelMap[i][j].setText("");
+						labelMap[i][j].setIcon(null);
+					}
+					labelMap[i][j].setOpaque(true);
+					labelMap[i][j].setBackground(Color.ORANGE);
+					labelMap[i][j].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+				}
 				else if(map.getPosition(i, j) >= 20 && map.getPosition(i, j) < 30) {
 					if(agentPosition == null)
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
 					labelMap[i][j].setBackground(Color.GRAY);
-					labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
+					int type = map.getPosition(i, j) % 20;
+					labelMap[i][j].setIcon(getScaledIcon("res/img/crate_"+type+".png", 0.17));
 				}
 				else if(map.getPosition(i, j) >= 30 && map.getPosition(i, j) < 40) {
 					if(agentPosition == null)
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
-					labelMap[i][j].setBackground(Color.CYAN);
-					//labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
+					labelMap[i][j].setBackground(Color.DARK_GRAY);
 				}
-				else if(map.getPosition(i, j) == 4) {
+				else if(map.getPosition(i, j) >= 40) {
 					if(agentPosition == null)
 						labelMap[i][j] = new JLabel();
 					labelMap[i][j].setOpaque(true);
-					labelMap[i][j].setBackground(Color.CYAN);
-					labelMap[i][j].setIcon(getScaledIcon("res/img/crate.png", 0.17));
+					labelMap[i][j].setBackground(Color.DARK_GRAY);
+					int type = map.getPosition(i, j) % 40;
+					labelMap[i][j].setIcon(getScaledIcon("res/img/crate_"+type+".png", 0.17));
 				}
 				
 				labelMap[i][j].setHorizontalAlignment(JLabel.CENTER);
 				labelMap[i][j].setVerticalTextPosition(JLabel.BOTTOM);
 				labelMap[i][j].setHorizontalTextPosition(JLabel.CENTER);
-				//labelMap[i][j].validate();
-				//labelMap[i][j].repaint();
-				
 			}
 		
 		if(agentPosition != null) {
@@ -157,30 +166,6 @@ public class GUI extends JFrame implements Runnable {
 		
 		mapPanel.validate();
 		mapPanel.repaint();
-		
-		//this.validate();
-		//this.repaint();
-		
-		/*
-		for(int i = 0; i < map.getHeigth(); i++)
-			for(int j = 0; j < map.getWidth(); j++)
-				this.mapPanel.add(labelMap[i][j]);
-		//*/
-		
-		/*
-		for(int i = 0; i < map.getHeigth(); i++)
-			for(int j = 0; j < map.getWidth(); j++) {
-				labelMap[i][j].validate();
-				labelMap[i][j].repaint();
-			}
-		
-		
-		mapPanel.validate();
-		mapPanel.repaint();
-		*/
-		//validate();
-		//repaint();
-		//*/
 	}
 	
 	private ImageIcon getScaledIcon(String path, double scaleFactor) {
@@ -198,7 +183,7 @@ public class GUI extends JFrame implements Runnable {
 		BufferedImage resizedImage = new BufferedImage(width, height, type);
 		Graphics2D g = resizedImage.createGraphics();
 		g.setComposite(AlphaComposite.Src);
-
+		
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 		RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 

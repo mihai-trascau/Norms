@@ -3,7 +3,6 @@ package env;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -14,17 +13,17 @@ public class Map
 	protected int height;
 	protected int width;
 	
-	private Vector<Position> initialPositions;
 	private Vector<Vector<Position>> packets;
 	private Vector<Vector<Position>> trucks;
+	private Vector<Position> depot;
 	
 	public Map(File mapFile) {
 		map = null;
         height = 0;
         width = 0;
-        initialPositions = new Vector<Position>();
         packets = new Vector<Vector<Position>>();
 		trucks = new Vector<Vector<Position>>();
+		depot = new Vector<Position>();
         this.mapFile = mapFile;
 	}
 	
@@ -35,26 +34,23 @@ public class Map
 		for (int i=0; i<height; i++)
 			for (int j=0; j<width; j++)
 				map[i][j] = m.map[i][j];
-		initialPositions = new Vector<Position>();
 		packets = new Vector<Vector<Position>>();
 		trucks = new Vector<Vector<Position>>();
+		depot = new Vector<Position>();
 	}
 	
-	public boolean isValid(Position p)
-	{
+	public boolean isValid(Position p) {
 		if (p.getX() >= 0 && p.getX() < height && p.getY() >= 0 && p.getY() < width)
 			if (map[p.getX()][p.getY()] <= 0 && -p.getTime() < map[p.getX()][p.getY()])
 				return true;
 		return false;
 	}
 	
-	public boolean isValidMove(Position p, Position.DIRECTION dir)
-	{
+	public boolean isValidMove(Position p, Position.DIRECTION dir) {
 		return isValid(p.getNextPosition(dir));
 	}
 	
-	public void readMap()
-	{
+	public void readMap() {
 		try {
 			Scanner scanner = new Scanner(mapFile);
 			height = scanner.nextInt();
@@ -62,8 +58,7 @@ public class Map
 			map = new int[height][width];
 			
 			for(int i = 0; i < height; i++)
-				for (int j = 0; j < width; j++)
-				{
+				for (int j = 0; j < width; j++) {
 					if(scanner.hasNextInt()) {
 						map[i][j] = scanner.nextInt();
 						if (map[i][j] >= 30) {
@@ -82,33 +77,14 @@ public class Map
 							}
 							packets.get(type-1).add(new Position(i,j));
 						}
-							/*if (map[i][j] == 2)
-							packets.add(new Position(i,j));
-						if (map[i][j] == 3)
-							trucks.add(new Position(i,j));*/
+						else if (map[i][j] == 2) {
+							depot.add(new Position(i,j));
+							map[i][j] = 0;
+						}
 					}
 					else
 						throw new IOException();
 				}
-			
-			int x, y;
-			while(scanner.hasNextInt())
-			{
-				x = scanner.nextInt();
-				if(scanner.hasNextInt())
-					y = scanner.nextInt();
-				else
-					throw new IOException();
-				initialPositions.add(new Position(x,y));
-				
-				/*x = scanner.nextInt();
-				if(scanner.hasNextInt())
-					y = scanner.nextInt();
-				else
-					throw new IOException();
-				finalPositions.add(new Position(x,y));*/
-			}
-			
 		} catch (FileNotFoundException e) {
 			System.err.println("[ERROR] Unable to load map file !!!");
 			e.printStackTrace();
@@ -118,8 +94,7 @@ public class Map
 		}
 	}
 
-    public void printMap()
-    {
+    public void printMap() {
     	if(map != null)
     	{
     		if(height != 0 && width != 0)
@@ -145,26 +120,11 @@ public class Map
     	return map[x][y];
     }
 	
-	public Position getInitialPosition()
-	{
-		if(map == null || initialPositions == null || initialPositions.size() == 0)
-			return null;
-		
-		Position initP = null;
-		if(initialPositions.size() == 1)
-			initP = initialPositions.firstElement();
+	public Position getInitialPosition() {
+		if(!depot.isEmpty())
+			return depot.remove(0);
 		else
-		{	
-			Random rand = new Random();
-			int index = rand.nextInt(initialPositions.size()-1);
-			initP = initialPositions.elementAt(index);
-			initialPositions.remove(index);
-		}
-		return initP;
-	}
-	
-	public Vector<Position> getInitialPositions() {
-		return initialPositions;
+			return null;
 	}
 	
 	public int getHeigth() {
@@ -181,5 +141,9 @@ public class Map
 
 	public Vector<Vector<Position>> getTrucks() {
 		return trucks;
+	}
+
+	public Vector<Position> getDepot() {
+		return depot;
 	}
 }

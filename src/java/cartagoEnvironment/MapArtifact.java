@@ -18,7 +18,7 @@ public class MapArtifact extends Artifact {
 	private Hashtable<String,AgentState> agentState;
 	private Hashtable<String,Boolean> actionInThisRound;
 	private int tick;
-	private String currentNormChecker;
+	private String currentAgent;
 	private GUI gui;
 	
 	void init() throws IOException {
@@ -55,17 +55,24 @@ public class MapArtifact extends Artifact {
 				if (trucks.get(i) != null)
 					for (Position p: trucks.get(i))
 						defineObsProperty("truck", i+1, p.getX(), p.getY());
-	}	
+		
+		Vector<Position> depot = map.getDepot();
+		for (Position pos: depot)
+			defineObsProperty("depot", pos.getX(), pos.getY());
+	}
 	
 	@OPERATION
 	void register(String name) {
-		System.out.println("CEVAAAA");
-		Position initPos = map.getInitialPositions().get(registeredAgents);
+		Position initPos = map.getInitialPosition();
 		agentPosition.put(name, initPos);
 		registeredAgents++;
 		
 		defineObsProperty("current_pos", name, initPos.getX(), initPos.getY());
-		signal(getOpUserId(),"tick",tick);
+		defineObsProperty("pos", name, initPos.getX(), initPos.getY(), tick);
+		defineObsProperty("pos", name, initPos.getX(), initPos.getY(), tick-1);
+		
+		if(registeredAgents == 5)
+			signal("tick",tick);
 		
 		agentState.put(name, AgentState.IDLE_LOADING);
 		actionInThisRound.put(name,false);
@@ -73,104 +80,129 @@ public class MapArtifact extends Artifact {
 	}
 	
 	void registerAction(String name) {
-		actionInThisRound.put(name, true);
+		if(actionInThisRound.get(name) == false)
+			actionInThisRound.put(name,true);
+		if(!actionInThisRound.contains(false)) {
+			for(String agentName : actionInThisRound.keySet())
+				actionInThisRound.put(agentName, false);
+			/*try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}*/
+			gui.drawMap(agentPosition, agentState);
+			tick++;
+			signal("tick",tick);
+		}
 	}
 
 	
 	@OPERATION
 	void stay(String name, int x, int y) {
-		if(getObsPropertyByTemplate("pos",x,y,tick) != null)
-			removeObsPropertyByTemplate("pos",x,y,tick);
-		defineObsProperty("pos",name,x,y,tick+1);
+		removeObsPropertyByTemplate("pos", name, x, y, tick-1);
+		defineObsProperty("pos", name, x, y, tick+1);
+		agentState.put(name, AgentState.PLANNING);
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void move(String name, int prev_x, int prev_y, int x, int y, int t) {
+		removeObsPropertyByTemplate("pos", name, prev_x, prev_y, t-1);
+		getObsPropertyByTemplate("current_pos", name, prev_x, prev_y).updateValues(name, x, y);
+		agentState.put(name, AgentState.MOVING);
+		agentPosition.put(name, new Position(x, y, t));
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void carry(String name, int prev_x, int prev_y, int x, int y, int t) {
+		removeObsPropertyByTemplate("pos", name, prev_x, prev_y, t-1);
+		getObsPropertyByTemplate("current_pos", name, prev_x, prev_y).updateValues(name, x, y);
+		agentState.put(name, AgentState.CARRYING);
+		agentPosition.put(name, new Position(x, y, t));
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void load(String name, int x, int y, int t, int type, int px, int py) {
+		removeObsPropertyByTemplate("pos",name,x,y,t-1);
+		removeObsPropertyByTemplate("packet",name,type,px,py);
+		defineObsProperty("loaded_packet", name,type,px,py);
+		agentState.put(name, AgentState.LOADING);
+		map.setPosition(px, py, 1);
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void unload(String name, int x, int y, int t, int ptype, int px, int py, int ttype, int tx, int ty) {
+		removeObsPropertyByTemplate("pos",name,x,y,t-1);
+		removeObsPropertyByTemplate("loaded_packet",name,ptype,px,py);
+		removeObsPropertyByTemplate("truck",name,ttype,tx,ty);
+		agentState.put(name, AgentState.PLANNING);
+		map.setPosition(tx, ty, 40+ptype);
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void publish_path(String name, Object[] path) {
+		for (int i = 0; i < path.length; i++) {
+			Position pos = new Position((String)path[i]);
+			defineObsProperty("pos",name,pos.getX(),pos.getY(),pos.getTime());
+		}
+	}
+	
+	@OPERATION
+	void unpublish_path(String name, Object[] path, int x, int y, int time) {
+		for (int i = 0; i < path.length; i++) {
+			Position pos = new Position((String)path[i]);
+			removeObsPropertyByTemplate("pos",name,pos.getX(),pos.getY(),pos.getTime());
+		}
+		defineObsProperty("pos", name, x, y, time-1);
+		defineObsProperty("pos", name, x, y, time);
+	}
+	
+	@OPERATION
+	void planned(String name, int x, int y, int t) {
+		removeObsPropertyByTemplate("pos",name,x,y,t-1);
+		agentState.put(name, AgentState.PLANNING);
+		registerAction(name);
 	}
 
 	@OPERATION
-	void register_packet(String name, String packet) {
-		defineObsProperty("select",name,packet);
+	void register_packet(String name, int type, int x, int y) {
+		removeObsPropertyByTemplate("packet", type, x, y);
+		defineObsProperty("packet", name, type, x, y);
 	}
 	
-	@GUARD
-	boolean synchronize(String agentName, int dir) {
-		if (!actionInThisRound.contains(0)) {
-			for(String name : actionInThisRound.keySet())
-				actionInThisRound.put(name, false);
-			tick++;
-		}
-		if (actionInThisRound.get(agentName) == false)
-			return true;
-		return false;
+	@OPERATION
+	void unregister_packet(String name, int type, int x, int y) {
+		removeObsPropertyByTemplate("packet", name, type, x, y);
+		defineObsProperty("packet", type, x, y);
 	}
 	
+	@OPERATION
+	void register_truck(String name, int type, int x, int y) {
+		removeObsPropertyByTemplate("truck", type, x, y);
+		defineObsProperty("truck", name, type, x, y);
+	}
 	
+	@OPERATION
+	void unregister_truck(String name, int type, int x, int y) {
+		removeObsPropertyByTemplate("truck", name, type, x, y);
+		defineObsProperty("truck", type, x, y);
+	}
+	
+	@OPERATION
+	void register_depot(String name, int x, int y) {
+		removeObsPropertyByTemplate("depot", x, y);
+		defineObsProperty("depot", name, x, y);
+	}
+	
+	/// TODO - DE RESCRIS INIT NORMS
 	@OPERATION
 	public void initNorms() {
 		int normID = 0;
-		String[] norm_content = new String[2];
-		norm_content[0] = 
-			"+!norm_content("+normID+",Conflicts) : true <-" +
-			"	.println(\"inconsitency detected with norm \","+normID+");" +
-			"	.my_name(MyNameTerm);" +
-			"	.term2string(MyNameTerm,MyName);" +
-			"	.member(Conflict,Conflicts);" +
-			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
-			"	.findall(pos(Conflict,X,Y,T),pos(Conflict,X,Y,T),L2);" +
-			"	.length(L1,N1);" +
-			"	.length(L2,N2);" +
-			" 	if (N2 < N1) {" +
-			"		.println(\"path replan caused by norm "+normID+"\");" +
-			"		drop_path_plan(L1);" +
-			"		?go_to(MyName,DX,DY);" +
-			"		replan_path(MyName,DX,DY,L2);" +
-			"	}" +
-			"	else {" +
-			"		.term2string(ConflictTerm,Conflict);" +
-			"		if (N2 == N1) {" +
-			"			if (MyName < Conflict) {" +
-			"				.send(ConflictTerm,achieve,path_conflict(MyName,L1));" +
-			"				.println(\"sent path conflict message (name based) to \",Conflict);" +
-			"			}" +
-			"			else {" +
-			"				.println(\"must replan path due to \",Conflict);" +
-			"				drop_path_plan(L1);" +
-			"				?go_to(MyName,DX,DY);" +
-			"				replan_path(MyName,DX,DY,L2);" +
-			"			}" +
-			"		}" +
-			"		else {" +
-			"			.send(ConflictTerm,achieve,path_conflict(MyName,L1));" +
-			"			.println(\"sent path conflict message to \",Conflict);" +
-			"		}" +
-			"	}" +
-			"	.println(\"plan now consistent with norm "+normID+"\").";
-		norm_content[1] = 
-			"+!path_conflict(RequesterName,RequesterPath) : true <-" +
-			"	.my_name(MyNameTerm);" +
-			"	 check_norm_begin(MyNameTerm);" +
-			"	.println(\"path conflict message received from \",RequesterName);" +
-			"	.term2string(MyNameTerm,MyName);" +
-			"	.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L1);" +
-			"	drop_path_plan(L1);" +
-			"	?go_to(MyName,DX,DY);" +
-			"	replan_path(MyName,DX,DY,RequesterPath);" +
-			"	.println(\"resolved path conflict with \",RequesterName);" +
-			"	 check_norm_end(MyNameTerm).";
-		defineObsProperty("push_norm",
-				normID,
-				"+!norm_activation("+normID+",Results) : true <-" +
-						".my_name(MyNameTerm);" +
-						".term2string(MyNameTerm,MyName);" +
-						".findall(pos(X,Y,T),pos(MyName,X,Y,T),L1);" +
-						".findall(pos(X,Y,T),(pos(Name,X,Y,T) & not Name==MyName),L2);" +
-						".intersection(L1,L2,L);" +
-						".length(L,N);" +
-						" N > 0;" +
-						".member(pos(X,Y,T),L);" +
-						".findall(Name,(pos(Name,X,Y,T) & not Name==MyName),ConflictAgents);" +
-						"Results = ConflictAgents.",
-				"",
-				norm_content,
-				"facilitator"
-				);
+		
 		normID++;
 		int[] normIDList = new int[normID];
 		for (int i=0; i<normID; i++)
@@ -178,159 +210,27 @@ public class MapArtifact extends Artifact {
 		defineObsProperty("norm_id_list", normIDList);
 	}
 	
-	@OPERATION
-	void replan_path(String name, int x, int y, Object[] path) {
-		System.out.println("replaning "+name);
-		Map myMap = new Map(map);
-		for (int i=0; i<path.length; i++) {
-			Position pos = new Position((String)path[i]);
-			myMap.setPosition(pos.getX(), pos.getY(), -pos.getTime());
-		}
-		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), myMap);
-		if(pathVector != null)
-			for (Position pos: pathVector)
-				defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
-		else
-			defineObsProperty("idle", name, agentPosition.get(name).getX(), agentPosition.get(name).getY(), tick);
-	}
+	@OPERATION (guard="syncBegin")
+	void sync_start(String name) {}
 	
-	@OPERATION
-	void drop_path_plan(Object[] path) {
-		for (int i=0; i<path.length; i++) {
-			String pos = (String)path[i];
-			String[] splitPos = pos.substring(pos.indexOf('(')+1,pos.indexOf(')')).split(",");
-			//removeObsProperty("pos");
-			String name = splitPos[0].replace("\"", "");
-			int x = Integer.parseInt(splitPos[1]);
-			int y = Integer.parseInt(splitPos[2]);
-			int t = Integer.parseInt(splitPos[3]);
-			if(this.getObsPropertyByTemplate("pos", name, x, y, t) != null)
-				removeObsPropertyByTemplate("pos", name, x, y, t);
-			else
-				System.out.println("path plan already deleted");
-		}
-	}
-	
-	//adjacency list of a cell
-	Vector<Position> getNeighbours(Position p, Map myMap) {
-		Vector<Position> neighbours = new Vector<Position>();
-		int x = p.getX();
-		int y = p.getY();
-		int t = p.getTime();
-		Position neighbour = new Position(x, y-1, t+1);
-		if (myMap.isValid(neighbour))
-			neighbours.add(neighbour);
-		neighbour = new Position(x, y+1, t+1);
-		if (myMap.isValid(neighbour))
-			neighbours.add(neighbour);
-		neighbour = new Position(x-1, y, t+1);
-		if (myMap.isValid(neighbour))
-			neighbours.add(neighbour);
-		neighbour = new Position(x+1, y, t+1);
-		if (myMap.isValid(neighbour))
-			neighbours.add(neighbour);
-		return neighbours;
-	}
-	
-	//BF traversal
-	Vector<Position> findPath(Position source, Position destination, Map myMap) {
-		source.setTime(tick);
-		Vector<Position> path = new Vector<Position>();
-		if (source.equals(destination)) {
-			path.add(source);
-			return path;
-		}
-		LinkedList<Position> queue = new LinkedList<Position>();
-		Vector<Position> visited = new Vector<Position>();
-		Hashtable<Position, Position> parents = new Hashtable<Position, Position>();
-		queue.add(source);
-		visited.add(source);
-		while (!queue.isEmpty()) {
-			Position current = queue.removeFirst();
-			for (Position next: getNeighbours(current, myMap))
-			{
-				if (!visited.contains(next)) {
-					visited.add(next);
-					queue.add(next);
-					parents.put(next, current);
-					//destination reached
-					if (next.equals(destination)) {
-						Position p = next;
-						do {
-							path.add(0, p);
-							p = parents.get(p);
-						} while (!p.equals(source));
-						path.add(0, p);
-						//for (int i=0; i<path.size(); i++)
-						//	path.get(i).setTime(i);
-						return path;
-					}
-				}
-			}
-		}
-		return null;
-	}
-	
-	@OPERATION (guard="syncBeginNormCheck")
-	void check_norm_begin(String name) {}
-	
-	@OPERATION (guard="syncEndNormCheck")
-	void check_norm_end(String name) {}
+	@OPERATION (guard="syncEnd")
+	void sync_end(String name) {}
 	
 	@GUARD
-	boolean syncBeginNormCheck(String name) {
-		if (currentNormChecker == null)
-		{
-			currentNormChecker = name;
+	boolean syncBegin(String name) {
+		if (currentAgent == null) {
+			currentAgent = name;
 			return true;
 		}
 		return false;
 	}
 	
 	@GUARD
-	boolean syncEndNormCheck(String name) {
-		if (currentNormChecker.equals(name))
-		{
-			currentNormChecker = null;
+	boolean syncEnd(String name) {
+		if (currentAgent.equals(name)) {
+			currentAgent = null;
 			return true;
 		}
 		return false;
 	}
-	
-	@OPERATION //(guard="syncPlan")
-	void plan_path(String name, int x, int y) {
-		Vector<Position> pathVector = findPath(agentPosition.get(name), new Position(x,y), map);
-		for (Position pos: pathVector)
-			defineObsProperty("pos", name, pos.getX(), pos.getY(), pos.getTime());
-	}
-	
-	/*boolean syncPlanGeneral(int agentID) {
-		if (currentPlanerID == -1)
-		{
-			currentPlanerID = agentID;
-			return true;
-		}
-		if (currentPlanerID == agentID)
-			return true;
-		return false;
-	}
-	
-	@GUARD
-	boolean syncPlan(int agentID, int x, int y) {
-		return syncPlanGeneral(agentID);
-	}
-	
-	@GUARD
-	boolean syncCommitPath(int agentID, Object[] myPathObj) {
-		boolean result = syncPlanGeneral(agentID);
-		currentPlanerID = -1;
-		return result;
-	}
-	
-	@GUARD
-	boolean syncReplan(int agentID, Object[] myPathObj, Object[] paths) {
-		boolean result = syncPlanGeneral(agentID);
-		currentPlanerID = -1;
-		return result;
-	}*/
 }

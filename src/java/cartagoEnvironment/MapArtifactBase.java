@@ -63,7 +63,7 @@ public class MapArtifactBase extends Artifact {
 	
 	@OPERATION
 	void register(String name) {
-		Position initPos = map.getInitialPositions().get(registeredAgents);
+		Position initPos = map.getInitialPosition();
 		agentPosition.put(name, initPos);
 		agentState.put(name, AgentState.IDLE_LOADING);
 		actionInThisRound.put(name,false);
