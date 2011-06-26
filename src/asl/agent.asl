@@ -1,21 +1,26 @@
-//norm(true,false,not pos(9,8)).
-norm(1,my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,false,
-.findall(1,pos(MyName,_,_,_),P1) & .findall(pos(Name,X1,Y1,T1),pos(Name,X1,Y1,T1),P2) & .length(P1,N1) & .length(P2,N2) & 
-(N1 < N2 | (N1==N2 & MyName < Name))).
 
-pos(agent1,2,3,1).
-pos(agent1,2,4,2).
-pos(agent1,2,5,3).
-pos(agent1,2,6,4).
+norm(1, step(N) & N>0, N>100, not pos(9,8,_)).
+norm(2, replanning & pos(Ag,X,Y,T), false, not pos(X,Y,T)).
+norm(3, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName, 
+		false,
+		.findall(1,pos(MyName,_,_,_),P1) & .findall(2,pos(Name,_,_,_),P2) & 
+		.length(P1,N1) & .length(P2,N2) & (N1 < N2 | (N1==N2 & MyName < Name))).
 
-pos(agent2,1,4,1).
-pos(agent2,2,4,2).
-pos(agent2,3,4,3).
-pos(agent2,3,5,4).
 
-my_name(agent2).
+pos("agent2",4,16,3).
 
-!start2.
+my_name("agent1").
+
+!start.
+
++!start3: true <-
+	?check_norms(NormsOK);
+	if (not NormsOK) {
+		.println("Incalca norma");
+	}
+	else {
+		.println("Satisface norma");
+	}.
 
 +!start2: true <-
 	?norm(ID,A,E,C);
@@ -26,8 +31,9 @@ my_name(agent2).
 		.println("Satisface norma");
 	}.
 
-+?check_norms: true <-
++?check_norms(Res): true <-
 	.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
+	+norms_infringed([]);
 	for (.member(norm(ID,A,E,C),Norms)) {
 		if (A & not E & not C) {
 			+conflicting_norm;
@@ -38,7 +44,11 @@ my_name(agent2).
 	}
 	if (conflicting_norm) {
 		-conflicting_norm;
-		.fail;
+		Res = false;
+	}
+	else {
+		Res = true;
+		-norms_infringed(_);
 	}.
 
 +norm_string(Activation,Expiration,Content): true <-
@@ -48,25 +58,27 @@ my_name(agent2).
 	+norm(ActivationTerm,ExpirationTerm,ContentTerm);
 	-norm_string(Activation,Expiration,Content).
 
-+?valid_neighbours(pos(X,Y),Res): true <-
-	.findall(norm(A,E,C),norm(A,E,C),Norms);
++?valid_neighbours(pos(X,Y,T),Res): true <-
+	.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 	?neighbours(pos(X,Y),Neighbours);
-	for (.member(N,Neighbours)) {
-		+N;
-		for (.member(norm(A,E,C),Norms)) {
-			if (not C) {
-				+bad_neighbour(N);
+	for (.member(pos(PX,PY),Neighbours)) {
+		+pos(PX,PY,T);
+		for (.member(norm(ID,A,E,C),Norms)) {
+			if (A & not E & not C) {
+				.println(pos(PX,PY,T)," because of ",ID);
+				+bad_neighbour(pos(PX,PY,T));
 			}
 		}
-		if (not bad_neighbour(N)) {
-			+valid_neighbour(N);
+		if (not bad_neighbour(pos(PX,PY,T))) {
+			+valid_neighbour(pos(PX,PY,T));
 		}
 		else {
-			-bad_neighbour(N);
+			-bad_neighbour(pos(PX,PY,T));
 		}
-		-N;
+		-pos(PX,PY,T);
 	}
 	.findall(P,valid_neighbour(P),Res);
+	//.println(Res);
 	.findall(valid_neighbour(P),valid_neighbour(P),L);
 	for (.member(VN,L)) {-VN;}.
 
@@ -96,26 +108,29 @@ my_name(agent2).
 	-neighbours_list(L5);
 	Res = L5.
 
-+?path(Dest,Path): true <-
-	?current_pos(SX,SY);
-	?tick(Tick);
-	+queue(0,SX,SY,Tick);
++?find_path(Dest,Path): true <-
+	?step(Step);
+	?my_name(MyName);
+	?current_pos(Name,SX,SY);
+	+queue(0,SX,SY,Step);
 	+visited(SX,SY);
 	while (.findall(queue(I,X,Y,T),queue(I,X,Y,T),Queue) & .length(Queue,Len) & Len>0) {
-		.min(Queue,queue(I1,CX,CY,T));
-		-queue(I1,CX,CY,T);
-		?valid_neighbours(pos(CX,CY),Neighbours);
-		for (.member(pos(NX,NY),Neighbours)) {
+		.min(Queue,queue(I1,CX,CY,CT));
+		-queue(I1,CX,CY,CT);
+		?valid_neighbours(pos(CX,CY,CT+1),Neighbours);
+		for (.member(pos(NX,NY,NT),Neighbours)) {
 			if (not visited(NX,NY)) {
 				.findall(queue(I,X,Y,T),queue(I,X,Y,T),Queue2);
 				.max(Queue,queue(I2,_,_,_));
-				+queue(I2+1,NX,NY,T+1);
+				+queue(I2+1,NX,NY,NT);
 				+visited(NX,NY);
-				+parent(pos(NX,NY,T+1),pos(CX,CY,T));
+				+parent(pos(NX,NY,NT),pos(CX,CY,CT));
 				if (pos(NX,NY)==Dest) {
-					P = pos(NX,NY,T+1);
+					+path(pos(NX,NY,NT+2));
+					+path(pos(NX,NY,NT+1));
+					P = pos(NX,NY,NT);
 					+current(P);
-					while (current(Pos) & Pos \== pos(SX,SY,Tick)) {
+					while (current(Pos) & Pos \== pos(SX,SY,Step)) {
 						+path(Pos);
 						?parent(Pos,Parent);
 						-+current(Parent);
@@ -124,7 +139,7 @@ my_name(agent2).
 			}
 		}
 	}
-	.findall(pos(X,Y,T),path(pos(X,Y,T)),Path);
+	.findall(pos(X,Y,T),path(pos(X,Y,T)),FirstPath);
 	.findall(queue(I,X,Y,T),queue(I,X,Y,T),L1);
 	for (.member(Q,L1)) {-Q;}
 	.findall(visited(X,Y),visited(X,Y),L2);
@@ -133,18 +148,37 @@ my_name(agent2).
 	for (.member(P,L3)) {-P;}
 	.findall(path(X),path(X),L4);
 	for (.member(P,L4)) {-P;}
-	-current(_).
+	-current(_);
+	for (.member(pos(FX,FY,FT),FirstPath)) {
+		+pos(MyName,FX,FY,FT);
+	}
+	?check_norms(NormsOK);
+	for (.member(pos(FX,FY,FT),FirstPath)) {
+		-pos(MyName,FX,FY,FT);
+	}
+	if (not NormsOK & not replanning) {
+		.println("Replaning");
+		+replanning;
+		?find_path(Dest,AlternativePath);
+		Path = AlternativePath;
+	}
+	else {
+		-replaning;
+		Path = FirstPath;
+	}.
 	
 
 	
 +!start: true <-
+	//.eval(E,not true);
+	//.println(E);
 	?get_map(MapID);
 	.my_name(MyNameTerm);
 	register(MyNameTerm) [artifact_id(MapID)];
 	focus(MapID);
-	+current_pos(3,17);
-	+tick(1);
-	?path(pos(9,6),Path);
+	+current_pos("agent1",3,17);
+	+step(1);
+	?find_path(pos(9,6),Path);
 	.length(Path,Len);
 	.println(Len," ",Path).
 	
