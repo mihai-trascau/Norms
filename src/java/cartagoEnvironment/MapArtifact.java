@@ -1,5 +1,7 @@
 package cartagoEnvironment;
 
+import jason.stdlib.intend;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -17,6 +19,7 @@ public class MapArtifact extends Artifact {
 	private Hashtable<String,Position> agentPosition;
 	private Hashtable<String,AgentState> agentState;
 	private Hashtable<String,Boolean> actionInThisRound;
+	private Hashtable<Integer,Integer> infringedNorms;
 	private int tick;
 	private String currentAgent;
 	private GUI gui;
@@ -24,13 +27,14 @@ public class MapArtifact extends Artifact {
 	void init() throws IOException {
 		
 		// Initialize map
-		map = new Map(new File("res/map3.in"));
+		map = new Map(new File("res/map4.in"));
 		map.readMap();
 		map.printMap();
 		
 		agentPosition = new Hashtable<String,Position>();
 		agentState = new Hashtable<String, AgentState>();
 		actionInThisRound = new Hashtable<String, Boolean>();
+		infringedNorms = new Hashtable<Integer, Integer>();
 		
 		System.out.println(map.getHeigth()+" "+map.getWidth());
 		
@@ -85,11 +89,11 @@ public class MapArtifact extends Artifact {
 		if(!actionInThisRound.contains(false)) {
 			for(String agentName : actionInThisRound.keySet())
 				actionInThisRound.put(agentName, false);
-			/*try {
-				Thread.sleep(300);
+			try {
+				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}*/
+			}
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 			signal("tick",tick);
@@ -102,6 +106,14 @@ public class MapArtifact extends Artifact {
 		removeObsPropertyByTemplate("pos", name, x, y, tick-1);
 		defineObsProperty("pos", name, x, y, tick+1);
 		agentState.put(name, AgentState.PLANNING);
+		registerAction(name);
+	}
+	
+	@OPERATION
+	void idle(String name, int x, int y) {
+		removeObsPropertyByTemplate("pos", name, x, y, tick-1);
+		defineObsProperty("pos", name, x, y, tick+1);
+		agentState.put(name, AgentState.IDLE_LOADING);
 		registerAction(name);
 	}
 	
@@ -198,6 +210,19 @@ public class MapArtifact extends Artifact {
 		defineObsProperty("depot", name, x, y);
 	}
 	
+	@OPERATION
+	void report_infringed_norms(Object[] norms) {
+		for (int i=0; i<norms.length; i++)
+		{
+			int norm = ((Byte)norms[i]).intValue();
+			if (infringedNorms.get(norm) == null)
+				infringedNorms.put(norm, 1);
+			else
+				infringedNorms.put(norm, infringedNorms.get(norm)+1);
+		}
+		System.out.println("Infringed norms: "+infringedNorms);
+	}
+	
 	/// TODO - DE RESCRIS INIT NORMS
 	@OPERATION
 	public void initNorms() {
@@ -211,13 +236,19 @@ public class MapArtifact extends Artifact {
 	}
 	
 	@OPERATION (guard="syncBegin")
-	void sync_start(String name) {}
+	void sync_start(String name) {
+		System.out.println("SYNC BEGIN "+name);
+	}
 	
 	@OPERATION (guard="syncEnd")
-	void sync_end(String name) {}
+	void sync_end(String name) {
+		System.out.println("SYNC END "+name);
+	}
 	
 	@GUARD
 	boolean syncBegin(String name) {
+		if(actionInThisRound.get(name) == true)
+			return false;
 		if (currentAgent == null) {
 			currentAgent = name;
 			return true;

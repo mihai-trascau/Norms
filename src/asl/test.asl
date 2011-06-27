@@ -1,8 +1,7 @@
-//norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,3,_,_)).
+norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,3,_,_)).
 //norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
 //norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
 //norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
-
 norm(4, replanning & pos(Ag,X,Y,T), false, not pos(X,Y,T)).
 norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName, 
 		false,
@@ -70,44 +69,48 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.println("Selected packet: ",T," ",X," ",Y);
 			-norms_infringed(_);
 			
-			?valid_neighbours(pos(X,Y,0),Neighbours);
+			?neighbours(pos(X,Y),Neighbours);
 			if (Neighbours \== []) {
-				.member(pos(NX,NY,NT),Neighbours);
+				register_packet(MyName,T,X,Y);
+				.member(pos(NX,NY),Neighbours);
 				?find_path(pos(NX,NY),Path);
+				.println("Path: ",Path);
 				if (Path == []) {
+					unregister_packet(MyName,T,X,Y);
 					.println("No path found to ",pos(NX,NY));
-					stay(MyName,SX,SY);
 					sync_end(MyName);
+					stay(MyName,SX,SY);
 				}
 				else {
-					register_packet(MyName,T,X,Y);
 					-packet_selection;
 					+moving;
 					publish_path(MyName,Path);
-					planned(MyName,SX,SY,N);
 					sync_end(MyName);
+					planned(MyName,SX,SY,N);
 				}
 			}
 			else {
 				.println("No valid neighbours found for selected packet");
-				stay(MyName,SX,SY);
 				sync_end(MyName);
+				stay(MyName,SX,SY);
 			}
 		}
 		else {
 			.println("No packet selected due to norms");
 			?norms_infringed(NormList);
 			.println("Infringed norms: ",NormList);
-			stay(MyName,SX,SY);
+			report_infringed_norms(NormList);
+			-norms_infringed(NormList);
 			sync_end(MyName);
+			stay(MyName,SX,SY);
 		}
 	}
 	else {
 		.println("No packets remaining, returning to depot");
 		-packet_selection;
 		+select_depot;
-		stay(MyName,SX,SY);
 		sync_end(MyName);
+		stay(MyName,SX,SY);
 	}.
 
 +tick(N) : N > 1 & moving <-
@@ -169,7 +172,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?current_pos(MyName,SX,SY);
 	sync_start(MyName);
 	.findall(truck(math.abs(SX-PX)+math.abs(SY-PY),Type,PX,PY),truck(Type,PX,PY),Trucks);
-	if(Trucks \== []) {
+	.println("trucks ",Trucks);
+	if (Trucks \== []) {
 		.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 		+norms_infringed([]);
 		for (.member(truck(D,T,X,Y),Trucks)) {
@@ -199,31 +203,40 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.println("Selected truck: ",T," ",X," ",Y);
 			-norms_infringed(_);
 			
-			?valid_neighbours(pos(X,Y,0),Neighbours);
+			?neighbours(pos(X,Y),Neighbours);
 			if (Neighbours \== []) {
-				.member(pos(NX,NY,NT),Neighbours);
+				register_truck(MyName,T,X,Y);
+				.member(pos(NX,NY),Neighbours);
 				?find_path(pos(NX,NY),Path);
+				.println("Path: ",Path);
 				if (Path == []) {
 					.println("No path found to ",pos(NX,NY));
-					stay(MyName,SX,SY);
+					unregister_truck(MyName,T,X,Y);
 					sync_end(MyName);
+					stay(MyName,SX,SY);
 				}
 				else {
-					register_truck(MyName,T,X,Y);
 					-truck_selection;
 					+carrying;
 					publish_path(MyName,Path);
-					planned(MyName,SX,SY,N);
 					sync_end(MyName);
+					planned(MyName,SX,SY,N);
 				}
+			}
+			else {
+				.println("No valid neighbours found for selected truck");
+				sync_end(MyName);
+				stay(MyName,SX,SY);
 			}
 		}
 		else {
 			.println("No truck selected due to norms");
 			?norms_infringed(NormList);
 			.println("Infringed norms: ",NormList);
-			stay(MyName,SX,SY);
+			report_infringed_norms(NormList);
+			-norms_infringed(NormList);
 			sync_end(MyName);
+			stay(MyName,SX,SY);
 		}
 	}
 	else {
@@ -238,7 +251,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?current_pos(MyName,CX,CY);
 	!check_norms(NormsOK);
 	if (not NormsOK) {
-		.println("Norm checking failed while! Selecting a different truck!");
+		.println("Norm checking failed while carrying! Selecting a different truck!");
 		-carrying;
 		+truck_selection;
 		.findall(pos(PX,PY,PT),pos(MyName,PX,PY,PT),PathToRemove);
@@ -294,17 +307,17 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?find_path(pos(DX,DY),Path);
 	if (Path == []) {
 		.println("No path found to ",pos(DX,DY));
-		stay(MyName,SX,SY);
 		//unregister_depot(MyName,DX,DY);
 		sync_end(MyName);
+		stay(MyName,SX,SY);
 	}
 	else {
 		register_depot(MyName,DX,DY);
 		-select_depot;
 		+move_to_depot;
 		publish_path(MyName,Path);
-		planned(MyName,SX,SY,N);
 		sync_end(MyName);
+		planned(MyName,SX,SY,N);
 	}.
 
 +tick(N) : N > 1 & move_to_depot <-
@@ -322,10 +335,15 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	else {
 		-move_to_depot;
 		+idle;
-		.println("BACK HOMEEEEEE !!!");
-		//move(MyName,CX,CY,X,Y,N);
+		idle(MyName,CX,CY);
 	}.
 
++tick(N) : N > 1 & idle <-
+	-+step(N);
+	.println("Tick ",N," [IDLING]");
+	?my_name(MyName);
+	?current_pos(MyName,CX,CY);
+	idle(MyName,CX,CY).
 
 
 /* PATHFINDING */
@@ -455,6 +473,9 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	}
 	if (conflicting_norm) {
 		-conflicting_norm;
+		?norms_infringed(NormList);
+		report_infringed_norms(NormList);
+		-norms_infringed(NormList);
 		Res = false;
 	}
 	else {

@@ -77,6 +77,8 @@ public class GUI extends JFrame implements Runnable {
 					}
 					labelMap[i][j].setOpaque(true);
 					labelMap[i][j].setBackground(Color.WHITE);
+					if (j == map.width-1)
+						labelMap[i][j].setBackground(Color.ORANGE);
 					labelMap[i][j].setForeground(Color.LIGHT_GRAY);
 					labelMap[i][j].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 				}
