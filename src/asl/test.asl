@@ -1,7 +1,7 @@
 norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,3,_,_)).
-//norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
-//norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
-//norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(_,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
+norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
+norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
+norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
 norm(4, replanning & pos(Ag,X,Y,T), false, not pos(X,Y,T)).
 norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName, 
 		false,
@@ -172,7 +172,6 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?current_pos(MyName,SX,SY);
 	sync_start(MyName);
 	.findall(truck(math.abs(SX-PX)+math.abs(SY-PY),Type,PX,PY),truck(Type,PX,PY),Trucks);
-	.println("trucks ",Trucks);
 	if (Trucks \== []) {
 		.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 		+norms_infringed([]);
@@ -398,7 +397,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 +?find_path(Dest,Path): true <-
 	?step(Step);
 	?my_name(MyName);
-	?current_pos(Name,SX,SY);
+	?current_pos(MyName,SX,SY);
 	+queue(0,SX,SY,Step);
 	+visited(SX,SY);
 	while (.findall(queue(I,X,Y,T),queue(I,X,Y,T),Queue) & .length(Queue,Len) & Len>0) {
@@ -412,7 +411,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 					I2 = 1;
 				}
 				else {
-					.max(Queue,queue(I2,_,_,_));
+					.max(Queue2,queue(I2,_,_,_));
 				}
 				+queue(I2+1,NX,NY,NT);
 				+visited(NX,NY);
@@ -450,6 +449,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	}
 	if (not NormsOK & not replanning) {
 		+replanning;
+		.println("Replanning");
 		?find_path(Dest,AlternativePath);
 		Path = AlternativePath;
 	}
