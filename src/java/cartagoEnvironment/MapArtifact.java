@@ -1,7 +1,5 @@
 package cartagoEnvironment;
 
-import jason.stdlib.intend;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -27,7 +25,7 @@ public class MapArtifact extends Artifact {
 	void init() throws IOException {
 		
 		// Initialize map
-		map = new Map(new File("res/map4.in"));
+		map = new Map(new File("res/map5.in"));
 		map.readMap();
 		map.printMap();
 		
