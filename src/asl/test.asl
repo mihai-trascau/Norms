@@ -2,6 +2,7 @@ norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Ty
 norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
 norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
 norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
+
 norm(4, replanning & pos(Ag,X,Y,T), false, not pos(X,Y,T)).
 norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName, 
 		false,
@@ -99,7 +100,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.println("No packet selected due to norms");
 			?norms_infringed(NormList);
 			.println("Infringed norms: ",NormList);
-			report_infringed_norms(NormList);
+			report_infringed_norms(MyName, NormList);
 			-norms_infringed(NormList);
 			sync_end(MyName);
 			stay(MyName,SX,SY);
@@ -232,7 +233,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.println("No truck selected due to norms");
 			?norms_infringed(NormList);
 			.println("Infringed norms: ",NormList);
-			report_infringed_norms(NormList);
+			report_infringed_norms(MyName, NormList);
 			-norms_infringed(NormList);
 			sync_end(MyName);
 			stay(MyName,SX,SY);
@@ -462,6 +463,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 /* NORM CHECKING */
 +!check_norms(Res): true <-
 	.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
+	?my_name(MyName);
 	+norms_infringed([]);
 	for (.member(norm(ID,A,E,C),Norms)) {
 		if (A & not E & not C) {
@@ -474,7 +476,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	if (conflicting_norm) {
 		-conflicting_norm;
 		?norms_infringed(NormList);
-		report_infringed_norms(NormList);
+		report_infringed_norms(MyName, NormList);
 		-norms_infringed(NormList);
 		Res = false;
 	}

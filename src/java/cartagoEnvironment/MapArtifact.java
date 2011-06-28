@@ -17,7 +17,7 @@ public class MapArtifact extends Artifact {
 	private Hashtable<String,Position> agentPosition;
 	private Hashtable<String,AgentState> agentState;
 	private Hashtable<String,Boolean> actionInThisRound;
-	private Hashtable<Integer,Integer> infringedNorms;
+	private Hashtable<String,Vector<Integer>> infringedNorms;
 	private int tick;
 	private String currentAgent;
 	private GUI gui;
@@ -29,10 +29,10 @@ public class MapArtifact extends Artifact {
 		map.readMap();
 		map.printMap();
 		
-		agentPosition = new Hashtable<String,Position>();
+		agentPosition = new Hashtable<String, Position>();
 		agentState = new Hashtable<String, AgentState>();
 		actionInThisRound = new Hashtable<String, Boolean>();
-		infringedNorms = new Hashtable<Integer, Integer>();
+		infringedNorms = new Hashtable<String, Vector<Integer>>();
 		
 		System.out.println(map.getHeigth()+" "+map.getWidth());
 		
@@ -208,7 +208,7 @@ public class MapArtifact extends Artifact {
 		defineObsProperty("depot", name, x, y);
 	}
 	
-	@OPERATION
+	/*@OPERATION
 	void report_infringed_norms(Object[] norms) {
 		for (int i=0; i<norms.length; i++)
 		{
@@ -217,6 +217,22 @@ public class MapArtifact extends Artifact {
 				infringedNorms.put(norm, 1);
 			else
 				infringedNorms.put(norm, infringedNorms.get(norm)+1);
+		}
+		System.out.println("Infringed norms: "+infringedNorms);
+	}*/
+	
+	@OPERATION
+	void report_infringed_norms(String name, Object[] norms) {
+		for (int i=0; i<norms.length; i++)
+		{
+			int norm = ((Byte)norms[i]).intValue();
+			if (infringedNorms.get(name) == null) {
+				Vector<Integer> normIDs = new Vector<Integer>();
+				normIDs.add(norm);
+				infringedNorms.put(name, normIDs);
+			}
+			else
+				infringedNorms.get(name).add(norm);
 		}
 		System.out.println("Infringed norms: "+infringedNorms);
 	}
