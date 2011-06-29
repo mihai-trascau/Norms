@@ -25,7 +25,7 @@ public class MapArtifact extends Artifact {
 	void init() throws IOException {
 		
 		// Initialize map
-		map = new Map(new File("res/map5.in"));
+		map = new Map(new File("res/map4.in"));
 		map.readMap();
 		map.printMap();
 		

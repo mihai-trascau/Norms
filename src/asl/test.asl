@@ -1,4 +1,4 @@
-norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,3,_,_)).
+norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,5,_,_)).
 norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
 norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
 norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
@@ -45,12 +45,21 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		+norms_infringed([]);
 		for (.member(packet(D,T,X,Y),Packets)) {
 			+packet(MyName,T,X,Y);
+			+bad_packet_inf_norm([]);
 			for (.member(norm(ID,A,E,C),Norms)) {
 					if (A & not E & not C) {
 						+bad_packet;
-						?norms_infringed(NormList);
-						.concat(NormList,[ID],InfNormList);
+						?bad_packet_inf_norm(PacketInfNormList);
+						.concat(PacketInfNormList,[ID],PINL);
+						-+bad_packet_inf_norm(PINL);
+						
+					}
+					?norms_infringed(NormList);
+					?bad_packet_inf_norm(PacketINL);
+					if (PacketINL \== []) {
+						.concat(NormList,[PacketINL],InfNormList);
 						-+norms_infringed(InfNormList);
+						-bad_packet_inf_norm(PacketINL);
 					}
 			}
 			if (not bad_packet) {
@@ -75,7 +84,6 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 				register_packet(MyName,T,X,Y);
 				.member(pos(NX,NY),Neighbours);
 				?find_path(pos(NX,NY),Path);
-				.println("Path: ",Path);
 				if (Path == []) {
 					unregister_packet(MyName,T,X,Y);
 					.println("No path found to ",pos(NX,NY));
@@ -99,8 +107,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		else {
 			.println("No packet selected due to norms");
 			?norms_infringed(NormList);
-			.println("Infringed norms: ",NormList);
-			report_infringed_norms(MyName, NormList);
+			.send(facilitator,tell,norms_infringed(MyName,N,true,NormList));
 			-norms_infringed(NormList);
 			sync_end(MyName);
 			stay(MyName,SX,SY);
@@ -176,16 +183,26 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	if (Trucks \== []) {
 		.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 		+norms_infringed([]);
+		+bad_truck_inf_norm([]);
 		for (.member(truck(D,T,X,Y),Trucks)) {
 			+truck(MyName,T,X,Y);
 			for (.member(norm(ID,A,E,C),Norms)) {
 					if (A & not E & not C) {
 						+bad_truck;
-						?norms_infringed(NormList);
-						.concat(NormList,[ID],InfNormList);
-						-+norms_infringed(InfNormList);
+						?bad_truck_inf_norm(TruckInfNormList);
+						.concat(TruckInfNormList,[ID],TINL);
+						-+bad_truck_inf_norm(TINL);
 					}
 			}
+			
+			?norms_infringed(NormList);
+			?bad_truck_inf_norm(TruckINL);
+			if (TruckINL \== []) {
+				.concat(NormList,[TruckINL],InfNormList);
+				-+norms_infringed(InfNormList);
+			}
+			-+bad_truck_inf_norm([]);
+			
 			if (not bad_truck) {
 				+selected_truck(truck(D,T,X,Y));
 			}
@@ -201,6 +218,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 				-selected_truck(P);
 			}
 			.println("Selected truck: ",T," ",X," ",Y);
+			?norms_infringed(NormList);
+			.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 			-norms_infringed(_);
 			
 			?neighbours(pos(X,Y),Neighbours);
@@ -208,7 +227,6 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 				register_truck(MyName,T,X,Y);
 				.member(pos(NX,NY),Neighbours);
 				?find_path(pos(NX,NY),Path);
-				.println("Path: ",Path);
 				if (Path == []) {
 					.println("No path found to ",pos(NX,NY));
 					unregister_truck(MyName,T,X,Y);
@@ -232,8 +250,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		else {
 			.println("No truck selected due to norms");
 			?norms_infringed(NormList);
-			.println("Infringed norms: ",NormList);
-			report_infringed_norms(MyName, NormList);
+			.send(facilitator,tell,norms_infringed(MyName,N,true,NormList));
 			-norms_infringed(NormList);
 			sync_end(MyName);
 			stay(MyName,SX,SY);
@@ -307,7 +324,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?find_path(pos(DX,DY),Path);
 	if (Path == []) {
 		.println("No path found to ",pos(DX,DY));
-		//unregister_depot(MyName,DX,DY);
+		.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 		sync_end(MyName);
 		stay(MyName,SX,SY);
 	}
@@ -462,6 +479,7 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 
 /* NORM CHECKING */
 +!check_norms(Res): true <-
+	?step(N);
 	.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 	?my_name(MyName);
 	+norms_infringed([]);
@@ -476,11 +494,13 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	if (conflicting_norm) {
 		-conflicting_norm;
 		?norms_infringed(NormList);
-		report_infringed_norms(MyName, NormList);
 		-norms_infringed(NormList);
 		Res = false;
+		.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 	}
 	else {
 		Res = true;
+		?norms_infringed(NormList);
+		.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 		-norms_infringed(_);
 	}.
