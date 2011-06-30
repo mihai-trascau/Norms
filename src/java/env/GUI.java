@@ -23,6 +23,7 @@ public class GUI extends JFrame implements Runnable {
 	private HashMap<String, Color> agentColor;
 	private Vector<Color> colorPool;
 	
+	
 	public GUI(Map map) {
 		super("Factory transport robots");
 		
@@ -201,4 +202,124 @@ public class GUI extends JFrame implements Runnable {
 		}
 
 	public void run() {}
+	
+	public synchronized void drawPolicy(Hashtable<String,Position> agentPosition, int policy[][]) {
+		//mapPanel.removeAll();
+		JFrame policyFrame = new JFrame("Policy");
+		policyFrame.setLayout(new GridLayout(map.getHeigth(), map.getWidth()));
+		JLabel policyLabelMap[][] = new JLabel[map.getHeigth()][map.getWidth()];
+		
+		for(int i = 0; i < map.getHeigth(); i++)
+			for(int j = 0; j < map.getWidth(); j++)
+			{
+				if(map.getPosition(i, j) == 0) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel(i+","+j);
+					else {
+						//labelMap[i][j].setIcon(null);
+						//labelMap[i][j].setText(i+","+j);
+					}
+					Position pos = new Position(i,j);
+					if(policy[i][j] != -1)
+						policyLabelMap[i][j].setIcon(getScaledIcon("res/arrows/arrow"+policy[i][j]+".jpg", 0.5));
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.WHITE);
+					if (j == map.width-1)
+						policyLabelMap[i][j].setBackground(Color.ORANGE);
+					policyLabelMap[i][j].setForeground(Color.LIGHT_GRAY);
+					policyLabelMap[i][j].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+				}
+				else if(map.getPosition(i, j) == 1) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel();
+					else
+						policyLabelMap[i][j].setIcon(null);
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.GRAY);
+					policyLabelMap[i][j].setForeground(Color.LIGHT_GRAY);
+				}
+				else if(map.getPosition(i, j) == 2) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel();
+					else {
+						policyLabelMap[i][j].setText("");
+						policyLabelMap[i][j].setIcon(null);
+					}
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.ORANGE);
+					policyLabelMap[i][j].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+				}
+				else if(map.getPosition(i, j) >= 20 && map.getPosition(i, j) < 30) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel();
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.GRAY);
+					int type = map.getPosition(i, j) % 20;
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/crate_"+type+".png", 0.17));
+				}
+				else if(map.getPosition(i, j) >= 30 && map.getPosition(i, j) < 40) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel();
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.DARK_GRAY);
+				}
+				else if(map.getPosition(i, j) >= 40) {
+					if(agentPosition == null)
+						policyLabelMap[i][j] = new JLabel();
+					policyLabelMap[i][j].setOpaque(true);
+					policyLabelMap[i][j].setBackground(Color.DARK_GRAY);
+					int type = map.getPosition(i, j) % 40;
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/crate_"+type+".png", 0.17));
+				}
+				
+				policyLabelMap[i][j].setHorizontalAlignment(JLabel.CENTER);
+				policyLabelMap[i][j].setVerticalTextPosition(JLabel.BOTTOM);
+				policyLabelMap[i][j].setHorizontalTextPosition(JLabel.CENTER);
+			}
+		
+		if(agentPosition != null) {
+			for(String agentName : agentPosition.keySet()){
+				int i = agentPosition.get(agentName).getX();
+				int j = agentPosition.get(agentName).getY();
+				
+				if(!agentColor.containsKey(agentName))
+					agentColor.put(agentName, colorPool.size() > 0 ? colorPool.remove(0) : Color.BLACK);
+				policyLabelMap[i][j].setForeground(agentColor.get(agentName));
+				policyLabelMap[i][j].setText(agentName);
+				AgentState state = AgentState.CARRYING;
+				switch(state)
+				{
+				case CARRYING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/loaded_robot.png", 0.15));
+					break;
+				case IDLE_LOADING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/idle_robot.png", 0.15));
+					break;
+				case IDLE_UNLOADING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/idle_robot.png", 0.15));
+					break;
+				case LOADING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/loading_robot.png", 0.15));
+					break;
+				case UNLOADING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/unloading_robot.png", 0.15));
+					break;
+				case MOVING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/empty_robot.png", 0.15));
+					break;
+				case PLANNING:
+					policyLabelMap[i][j].setIcon(getScaledIcon("res/img/planning_robot.png", 0.15));
+				}
+			}
+		}
+		
+		for(int i = 0; i < map.getHeigth(); i++)
+			for(int j = 0; j < map.getWidth(); j++)
+				policyFrame.getContentPane().add(policyLabelMap[i][j]);
+
+		policyFrame.pack();
+		policyFrame.setVisible(true);
+		//mapPanel.validate();
+		//mapPanel.repaint();
+	}
 }

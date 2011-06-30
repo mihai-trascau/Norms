@@ -1,4 +1,4 @@
-norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,5,_,_)).
+norm(0, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 1 | Type == 2), false, my_name(MyName) & truck(MyName,3,_,_)).
 norm(1, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 1 & Type \== 2, false, my_name(MyName) & not truck(MyName,3,_,_)).
 norm(2, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & (Type == 3 | Type == 5), false, my_name(MyName) & truck(MyName,2,_,_)).
 norm(3, step(N) & N > 0 & my_name(MyName) & loaded_packet(MyName,Type,_,_) & Type \== 3 & Type \== 5, false, my_name(MyName) & not truck(MyName,2,_,_)).
@@ -39,29 +39,29 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	?step(N);
 	sync_start(MyName);
 	.findall(packet(math.abs(SX-PX)+math.abs(SY-PY),Type,PX,PY),packet(Type,PX,PY),Packets);
-	if(Packets \== [])
-	{
+	if(Packets \== []) {
 		.findall(norm(ID,A,E,C),norm(ID,A,E,C),Norms);
 		+norms_infringed([]);
+		+bad_packet_inf_norm([]);
 		for (.member(packet(D,T,X,Y),Packets)) {
 			+packet(MyName,T,X,Y);
-			+bad_packet_inf_norm([]);
 			for (.member(norm(ID,A,E,C),Norms)) {
 					if (A & not E & not C) {
 						+bad_packet;
 						?bad_packet_inf_norm(PacketInfNormList);
 						.concat(PacketInfNormList,[ID],PINL);
 						-+bad_packet_inf_norm(PINL);
-						
-					}
-					?norms_infringed(NormList);
-					?bad_packet_inf_norm(PacketINL);
-					if (PacketINL \== []) {
-						.concat(NormList,[PacketINL],InfNormList);
-						-+norms_infringed(InfNormList);
-						-bad_packet_inf_norm(PacketINL);
 					}
 			}
+			
+			?norms_infringed(NormList);
+			?bad_packet_inf_norm(PacketINL);
+			if (PacketINL \== []) {
+				.concat(NormList,[PacketINL],InfNormList);
+				-+norms_infringed(InfNormList);
+			}
+			-+bad_packet_inf_norm([]);
+			
 			if (not bad_packet) {
 				+selected_packet(packet(D,T,X,Y));
 			}
@@ -88,6 +88,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 					unregister_packet(MyName,T,X,Y);
 					.println("No path found to ",pos(NX,NY));
 					sync_end(MyName);
+					report_action(MyName,0);
+					do_action(MyName);
 					stay(MyName,SX,SY);
 				}
 				else {
@@ -95,12 +97,16 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 					+moving;
 					publish_path(MyName,Path);
 					sync_end(MyName);
+					report_action(MyName,1);
+					do_action(MyName);
 					planned(MyName,SX,SY,N);
 				}
 			}
 			else {
 				.println("No valid neighbours found for selected packet");
 				sync_end(MyName);
+				report_action(MyName,0);
+				do_action(MyName);
 				stay(MyName,SX,SY);
 			}
 		}
@@ -110,6 +116,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.send(facilitator,tell,norms_infringed(MyName,N,true,NormList));
 			-norms_infringed(NormList);
 			sync_end(MyName);
+			report_action(MyName,0);
+			do_action(MyName);
 			stay(MyName,SX,SY);
 		}
 	}
@@ -118,6 +126,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		-packet_selection;
 		+select_depot;
 		sync_end(MyName);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,SX,SY);
 	}.
 
@@ -131,23 +141,48 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		.println("Norm checking failed while moving! Selecting a different packet!");
 		-moving;
 		+packet_selection;
+		//scoruri pt pozitii
+		if (pos(MyName,X1,Y1,T1) & pos(Name,X1,Y1,T1) & Name \== MyName) {
+			if (pos(MyName,X2,Y2,T1+1)) {
+				?direction(pos(X1,Y1),pos(X2,Y2),Dir);
+				!update_score(X1,Y1,Dir,-10);
+			}
+		}
+		//<<
 		.findall(pos(PX,PY,PT),pos(MyName,PX,PY,PT),PathToRemove);
 		unpublish_path(MyName,PathToRemove,CX,CY,N);
 		?packet(MyName,T,X,Y);
 		unregister_packet(MyName,T,X,Y);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,CX,CY);
 	} 
 	else {
 		.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L);
 		.length(L,Len);
 		?pos(MyName,X,Y,N);
-		if (Len > 4) {
-			.findall(current_pos(Name,CPOSX,CPOSY),current_pos(Name,CPOSX,CPOSY),Cposes);
-			move(MyName,CX,CY,X,Y,N);
-		}
-		else {
+		//>>
+		?direction(pos(CX,CY),pos(X,Y),Dir);
+		!update_score(CX,CY,Dir,5);
+		//<<
+		if (Len <= 4) {
 			-moving;
 			+loading;
+		}
+		report_action(MyName,2);
+		do_action(MyName);
+		!check_norms(NormsOKAgain);
+		if (not NormsOKAgain) {
+			.println("move - changed mind");
+			-moving;
+			+packet_selection;
+			.findall(pos(PX,PY,PT),pos(MyName,PX,PY,PT),PathToRemove);
+			unpublish_path(MyName,PathToRemove,CX,CY,N);
+			?packet(MyName,PT,PX,PY);
+			unregister_packet(MyName,PT,PX,PY);
+			stay(MyName,CX,CY);
+		}
+		else {
 			move(MyName,CX,CY,X,Y,N);
 		}
 	}.
@@ -164,12 +199,16 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		+packet_selection;
 		?packet(MyName,T,X,Y);
 		unregister_packet(MyName,T,X,Y);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,CX,CY);
 	}
 	else {
 		-loading;
 		+truck_selection;
 		?packet(MyName,T,PX,PY);
+		report_action(MyName,1);
+		do_action(MyName);
 		load(MyName,CX,CY,N,T,PX,PY);
 	}.
 
@@ -231,6 +270,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 					.println("No path found to ",pos(NX,NY));
 					unregister_truck(MyName,T,X,Y);
 					sync_end(MyName);
+					report_action(MyName,0);
+					do_action(MyName);
 					stay(MyName,SX,SY);
 				}
 				else {
@@ -238,12 +279,16 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 					+carrying;
 					publish_path(MyName,Path);
 					sync_end(MyName);
+					report_action(MyName,1);
+					do_action(MyName);
 					planned(MyName,SX,SY,N);
 				}
 			}
 			else {
 				.println("No valid neighbours found for selected truck");
 				sync_end(MyName);
+				report_action(MyName,0);
+				do_action(MyName);
 				stay(MyName,SX,SY);
 			}
 		}
@@ -253,6 +298,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 			.send(facilitator,tell,norms_infringed(MyName,N,true,NormList));
 			-norms_infringed(NormList);
 			sync_end(MyName);
+			report_action(MyName,0);
+			do_action(MyName);
 			stay(MyName,SX,SY);
 		}
 	}
@@ -271,22 +318,48 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		.println("Norm checking failed while carrying! Selecting a different truck!");
 		-carrying;
 		+truck_selection;
+		//>>
+		if (pos(MyName,X1,Y1,T1) & pos(Name,X1,Y1,T1) & Name \== MyName) {
+			if (pos(MyName,X2,Y2,T1+1)) {
+				?direction(pos(X1,Y1),pos(X2,Y2),Dir);
+				!update_score(X1,Y1,Dir,-10);
+			}
+		}
+		//<<
 		.findall(pos(PX,PY,PT),pos(MyName,PX,PY,PT),PathToRemove);
 		unpublish_path(MyName,PathToRemove,CX,CY,N);
 		?truck(MyName,T,X,Y);
 		unregister_truck(MyName,T,X,Y);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,CX,CY);
 	} 
 	else {
 		.findall(pos(MyName,X,Y,T),pos(MyName,X,Y,T),L);
 		.length(L,Len);
 		?pos(MyName,X,Y,N);
-		if (Len > 4) {
-			carry(MyName,CX,CY,X,Y,N);
-		}
-		else {
+		//>>
+		?direction(pos(CX,CY),pos(X,Y),Dir);
+		!update_score(CX,CY,Dir,5);
+		//<<
+		if (Len <= 4) {
 			-carrying;
 			+unloading;
+		}
+		report_action(MyName,2);
+		do_action(MyName);
+		!check_norms(NormsOKAgain);
+		if (not NormsOKAgain) {
+			.println("carry - changed mind");
+			-carrying;
+			+truck_selection;
+			.findall(pos(PX,PY,PT),pos(MyName,PX,PY,PT),PathToRemove);
+			unpublish_path(MyName,PathToRemove,CX,CY,N);
+			?truck(MyName,TT,TX,TY);
+			unregister_truck(MyName,TT,TX,TY);
+			stay(MyName,CX,CY);
+		}
+		else {
 			carry(MyName,CX,CY,X,Y,N);
 		}
 	}.
@@ -303,6 +376,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		+packet_selection;
 		?truck(MyName,T,X,Y);
 		unregister_truck(MyName,T,X,Y);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,CX,CY);
 	}
 	else {
@@ -310,6 +385,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		+packet_selection;
 		?loaded_packet(MyName,LPT,LPX,LPY);
 		?truck(MyName,TT,TX,TY);
+		report_action(MyName,1);
+		do_action(MyName);
 		unload(MyName,CX,CY,N,LPT,LPX,LPY,TT,TX,TY);
 	}.
 
@@ -326,14 +403,19 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		.println("No path found to ",pos(DX,DY));
 		.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 		sync_end(MyName);
+		report_action(MyName,0);
+		do_action(MyName);
 		stay(MyName,SX,SY);
 	}
 	else {
 		register_depot(MyName,DX,DY);
 		-select_depot;
 		+move_to_depot;
+		!send_positions_score;
 		publish_path(MyName,Path);
 		sync_end(MyName);
+		report_action(MyName,1);
+		do_action(MyName);
 		planned(MyName,SX,SY,N);
 	}.
 
@@ -352,6 +434,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	else {
 		-move_to_depot;
 		+idle;
+		report_action(MyName,1);
+		do_action(MyName);
 		idle(MyName,CX,CY);
 	}.
 
@@ -360,6 +444,8 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 	.println("Tick ",N," [IDLING]");
 	?my_name(MyName);
 	?current_pos(MyName,CX,CY);
+	report_action(MyName,1);
+	do_action(MyName);
 	idle(MyName,CX,CY).
 
 
@@ -462,6 +548,14 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		+pos(MyName,FX,FY,FT);
 	}
 	!check_norms(NormsOK);
+	//>>
+	if (pos(MyName,X1,Y1,T1) & pos(Name,X1,Y1,T1) & Name \== MyName) {
+		if (pos(MyName,X2,Y2,T1+1)) {
+			?direction(pos(X1,Y1),pos(X2,Y2),Dir);
+			!update_score(X1,Y1,Dir,-10);
+		}
+	}
+	//<<
 	for (.member(pos(FX,FY,FT),FirstPath)) {
 		-pos(MyName,FX,FY,FT);
 	}
@@ -504,3 +598,23 @@ norm(5, my_name(MyName) & pos(MyName,X,Y,T) & pos(Name,X,Y,T) & Name \== MyName,
 		.send(facilitator,tell,norms_infringed(MyName,N,false,NormList));
 		-norms_infringed(_);
 	}.
+	
++?direction(pos(X,Y),pos(X-1,Y),north).
++?direction(pos(X,Y),pos(X+1,Y),south).
++?direction(pos(X,Y),pos(X,Y-1),west).
++?direction(pos(X,Y),pos(X,Y+1),east).
++?direction(pos(X,Y),pos(X,Y),still).
+
++!update_score(X,Y,D,V): true <-
+	if (score(X,Y,D,Score)) {
+		-score(X,Y,D,Score);
+		+score(X,Y,D,Score+V);
+	}
+	else {
+		+score(X,Y,D,V);
+	}.
+
++!send_positions_score: true <-
+	?my_name(MyName);
+	.findall(score(X,Y,Dir,Score),score(X,Y,Dir,Score),Scores);
+	.send(facilitator,tell,scores(MyName,Scores)).

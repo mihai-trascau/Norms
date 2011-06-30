@@ -2,6 +2,7 @@ package cartagoEnvironment;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.*;
 
 import cartago.*;
@@ -18,6 +19,7 @@ public class MapArtifact extends Artifact {
 	private Hashtable<String,AgentState> agentState;
 	private Hashtable<String,Boolean> actionInThisRound;
 	private Hashtable<String,Vector<Integer>> infringedNorms;
+	private Hashtable<String,Integer> reportedActions;
 	private int tick;
 	private String currentAgent;
 	private GUI gui;
@@ -33,6 +35,7 @@ public class MapArtifact extends Artifact {
 		agentState = new Hashtable<String, AgentState>();
 		actionInThisRound = new Hashtable<String, Boolean>();
 		infringedNorms = new Hashtable<String, Vector<Integer>>();
+		reportedActions = new Hashtable<String, Integer>();
 		
 		System.out.println(map.getHeigth()+" "+map.getWidth());
 		
@@ -61,6 +64,28 @@ public class MapArtifact extends Artifact {
 		Vector<Position> depot = map.getDepot();
 		for (Position pos: depot)
 			defineObsProperty("depot", pos.getX(), pos.getY());
+		
+		//-----------------
+		
+		Scanner scanner = new Scanner(new File("res/policy3.in"));
+		Hashtable<Position,Integer> policy = new Hashtable<Position, Integer>();
+		int policyMap[][] = new int[10][19];
+		for (int i=0; i<10; i++)
+			for (int j=0; j<19; j++)
+				policyMap[i][j] = -1;
+		for (int i=0; i<173; i++) {
+			int x=0,y=0,dir=0;
+			x = scanner.nextInt();
+			y = scanner.nextInt();
+			dir = scanner.nextInt();
+			policy.put(new Position(x,y), dir);
+			policyMap[x][y] = dir;
+			scanner.nextInt();
+		}
+		System.out.println(policy);
+		gui.drawPolicy(null, policyMap);
+		
+		//-----------------
 	}
 	
 	@OPERATION
@@ -82,22 +107,41 @@ public class MapArtifact extends Artifact {
 	}
 	
 	void registerAction(String name) {
-		if(actionInThisRound.get(name) == false)
+		if(actionInThisRound.get(name) == false) {
 			actionInThisRound.put(name,true);
+			reportedActions.put(name,Integer.MAX_VALUE);
+		}
 		if(!actionInThisRound.contains(false)) {
 			for(String agentName : actionInThisRound.keySet())
 				actionInThisRound.put(agentName, false);
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			reportedActions.clear();
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
 			gui.drawMap(agentPosition, agentState);
 			tick++;
 			signal("tick",tick);
 		}
 	}
 
+	@OPERATION
+	void report_action(String name, int action) {
+		reportedActions.put(name, action);
+	}
+	
+	@OPERATION (guard="barrier_action")
+	void do_action(String name) {}
+	
+	@GUARD
+	boolean barrier_action(String name) {
+		if (reportedActions.size() < registeredAgents)
+			return false;
+		if (reportedActions.get(name) == Collections.min(reportedActions.values()))
+			return true;
+		return false;
+	}
 	
 	@OPERATION
 	void stay(String name, int x, int y) {
